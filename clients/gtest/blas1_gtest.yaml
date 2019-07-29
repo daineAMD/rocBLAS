@@ -27,6 +27,7 @@ Tests:
   incx_incy: *incx_incy_range
   alpha_beta: *alpha_beta_range
   alphai_betai: *alphai_betai_range
+  batch_count: [1, 5, 10]
   function:
     - nrm2:  *single_double_precisions_complex_real
     - asum:  *single_double_precisions_complex_real
@@ -38,6 +39,7 @@ Tests:
     - dotc:  *single_double_precisions_complex
     - scal:  *single_double_precisions_complex_real
     - scal:  *single_double_complex_real_in_complex_out
+    - scal_batched: *single_double_precisions_complex_real
     - swap:  *single_double_precisions_complex_real
 
 - name: blas1
@@ -46,6 +48,7 @@ Tests:
   incx_incy: *incx_incy_range
   alpha_beta: *alpha_beta_range
   alphai_betai: *alphai_betai_range
+  batch_count: [1, 5, 10]
   function:
     - nrm2:  *double_precision_complex_real
     - asum:  *double_precision_complex_real
@@ -61,6 +64,7 @@ Tests:
 
 - name: blas1_bad_arg
   category: pre_checkin
+  batch_count: [1, 5, 10]
   function:
     - nrm2_bad_arg:  *single_double_precisions_complex_real
     - asum_bad_arg:  *single_double_precisions_complex_real

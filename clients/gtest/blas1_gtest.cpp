@@ -10,6 +10,8 @@
 #include "testing_iamax_iamin.hpp"
 #include "testing_nrm2.hpp"
 #include "testing_scal.hpp"
+#include "testing_scal_batched.hpp"
+// #include "testing_scal_strided_batched.hpp"
 #include "testing_swap.hpp"
 #include "type_dispatch.hpp"
 #include "utility.hpp"
@@ -26,7 +28,7 @@ namespace
         copy,
         dot,
         dotc,
-        scal,
+        scal, scal_batched, scal_strided_batched,
         swap,
     };
 
@@ -96,7 +98,7 @@ namespace
                     || std::is_same<Ti, rocblas_double_complex>{} || std::is_same<Ti, float>{}
                     || std::is_same<Ti, double>{}))
 
-            || (BLAS1 == blas1::scal && std::is_same<To, Tc>{}
+            || ((BLAS1 == blas1::scal || BLAS1 == blas1::scal_batched) && std::is_same<To, Tc>{}
                 && ((std::is_same<Ti, rocblas_float_complex>{} && std::is_same<Ti, To>{})
                     || (std::is_same<Ti, rocblas_double_complex>{} && std::is_same<Ti, To>{})
                     || (std::is_same<Ti, float>{} && std::is_same<Ti, To>{})
@@ -160,7 +162,7 @@ template<>                                                                     \
 inline bool NAME::function_filter(const Arguments& arg)                        \
 {                                                                              \
     return !strcmp(arg.function, #NAME) ||                                     \
-        !strcmp(arg.function, #NAME "_bad_arg");                               \
+           !strcmp(arg.function, #NAME "_bad_arg");                            \
 }                                                                              \
                                                                                \
 TEST_P(NAME, blas1)                                                            \
@@ -183,6 +185,8 @@ BLAS1_TESTING(copy,  ARG1)
 BLAS1_TESTING(dot,   ARG1)
 BLAS1_TESTING(dotc,  ARG1)
 BLAS1_TESTING(scal,  ARG2)
+BLAS1_TESTING(scal_batched, ARG2)
+// BLAS1_TESTING(scal_strided_batched, ARG2)
 BLAS1_TESTING(swap,  ARG1)
 
     // clang-format on
