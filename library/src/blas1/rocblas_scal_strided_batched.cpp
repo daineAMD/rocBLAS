@@ -20,9 +20,11 @@ namespace
     template <>
     constexpr char rocblas_scal_name<rocblas_double_complex>[] = "rocblas_zscal_strided_batched";
     template <>
-    constexpr char rocblas_scal_name<rocblas_float_complex, float>[] = "rocblas_csscal_strided_batched";
+    constexpr char rocblas_scal_name<rocblas_float_complex, float>[]
+        = "rocblas_csscal_strided_batched";
     template <>
-    constexpr char rocblas_scal_name<rocblas_double_complex, double>[] = "rocblas_zdscal_strided_batched";
+    constexpr char rocblas_scal_name<rocblas_double_complex, double>[]
+        = "rocblas_zdscal_strided_batched";
 
     template <typename T, typename U>
     rocblas_status rocblas_scal_strided_batched_impl(rocblas_handle handle,
@@ -42,7 +44,8 @@ namespace
         if(handle->pointer_mode == rocblas_pointer_mode_host)
         {
             if(layer_mode & rocblas_layer_mode_log_trace)
-                log_trace(handle, rocblas_scal_name<T, U>, n, *alpha, x, incx, stridex, batch_count);
+                log_trace(
+                    handle, rocblas_scal_name<T, U>, n, *alpha, x, incx, stridex, batch_count);
 
             // there are an extra 2 scal functions, thus
             // the -r mode will not work correctly. Substitute
@@ -56,7 +59,7 @@ namespace
                                 ? (" --alphai " + std::to_string(std::imag(*alpha)))
                                 : "");
                 log_bench(handle,
-                          "./rocblas-bench -f scal_batched --a_type",
+                          "./rocblas-bench -f scal_strided_batched --a_type",
                           rocblas_precision_string<T>,
                           "--b_type",
                           rocblas_precision_string<U>,
@@ -64,10 +67,10 @@ namespace
                           n,
                           "--incx",
                           incx,
-                          "--stridex",
+                          "--stride_x",
                           stridex,
                           alphass.str(),
-                          "--batch_count",
+                          "--batch",
                           batch_count);
             }
         }
@@ -77,14 +80,24 @@ namespace
                 log_trace(handle, rocblas_scal_name<T, U>, n, alpha, x, incx, stridex, batch_count);
         }
         if(layer_mode & rocblas_layer_mode_log_profile)
-            log_profile(handle, rocblas_scal_name<T, U>, "N", n, "incx", incx, "stridex", stridex, "batch_count", batch_count);
+            log_profile(handle,
+                        rocblas_scal_name<T, U>,
+                        "N",
+                        n,
+                        "incx",
+                        incx,
+                        "stride_x",
+                        stridex,
+                        "batch",
+                        batch_count);
 
         if(!x)
             return rocblas_status_invalid_pointer;
 
         RETURN_ZERO_DEVICE_MEMORY_SIZE_IF_QUERIED(handle);
 
-        return rocblas_scal_strided_batched_template(handle, n, alpha, x, incx, stridex, batch_count);
+        return rocblas_scal_strided_batched_template(
+            handle, n, alpha, x, incx, stridex, batch_count);
     }
 
 } // namespace

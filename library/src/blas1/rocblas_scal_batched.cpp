@@ -64,7 +64,7 @@ namespace
                           "--incx",
                           incx,
                           alphass.str(),
-                          "--batch_count",
+                          "--batch",
                           batch_count);
             }
         }
@@ -74,7 +74,8 @@ namespace
                 log_trace(handle, rocblas_scal_name<T, U>, n, alpha, x, incx, batch_count);
         }
         if(layer_mode & rocblas_layer_mode_log_profile)
-            log_profile(handle, rocblas_scal_name<T, U>, "N", n, "incx", incx, "batch_count", batch_count);
+            log_profile(
+                handle, rocblas_scal_name<T, U>, "N", n, "incx", incx, "batch", batch_count);
 
         if(!x)
             return rocblas_status_invalid_pointer;
@@ -95,11 +96,11 @@ namespace
 extern "C" {
 
 rocblas_status rocblas_sscal_batched(rocblas_handle handle,
-                                     rocblas_int n,
-                                     const float* alpha,
-                                     float* x[],
-                                     rocblas_int incx,
-                                     rocblas_int batch_count)
+                                     rocblas_int    n,
+                                     const float*   alpha,
+                                     float*         x[],
+                                     rocblas_int    incx,
+                                     rocblas_int    batch_count)
 {
     return rocblas_scal_batched_impl(handle, n, alpha, x, incx, batch_count);
 }

@@ -25,7 +25,8 @@ __global__ void scal_kernel_batched(rocblas_int n, U alpha_device_host, T* xa[],
 }
 
 template <typename T, typename U>
-__global__ void scal_kernel_strided_batched(rocblas_int n, U alpha_device_host, T* xa, rocblas_int incx, rocblas_int stridex)
+__global__ void scal_kernel_strided_batched(
+    rocblas_int n, U alpha_device_host, T* xa, rocblas_int incx, rocblas_int stridex)
 {
     T* x = xa + hipBlockIdx_y * stridex;
     scal_kernel<T, U>(n, alpha_device_host, x, incx);

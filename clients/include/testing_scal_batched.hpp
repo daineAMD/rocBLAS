@@ -28,7 +28,7 @@ void testing_scal_batched(const Arguments& arg)
     if(N <= 0 || incx <= 0) // ???
     {
         static const size_t safe_size = 100; // arbitrarily set to 100
-        T** dx;
+        T**                 dx;
         hipMalloc(&dx, sizeof(T*));
         if(!dx)
         {
@@ -37,7 +37,8 @@ void testing_scal_batched(const Arguments& arg)
         }
 
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
-        CHECK_ROCBLAS_ERROR((rocblas_scal_batched<T, U>(handle, N, &h_alpha, dx, incx, batch_count)));
+        CHECK_ROCBLAS_ERROR(
+            (rocblas_scal_batched<T, U>(handle, N, &h_alpha, dx, incx, batch_count)));
         CHECK_HIP_ERROR(hipFree(dx));
         return;
     }
@@ -47,8 +48,8 @@ void testing_scal_batched(const Arguments& arg)
     // Naming: dX is in GPU (device) memory. hK is in CPU (host) memory, plz follow this practice
 
     // Device-arrays of pointers to device memory
-    T** dx_1;
-    T** dx_2;
+    T**              dx_1;
+    T**              dx_2;
     device_vector<U> d_alpha(1);
     hipMalloc(&dx_1, batch_count * sizeof(T*));
     hipMalloc(&dx_2, batch_count * sizeof(T*));
@@ -67,21 +68,19 @@ void testing_scal_batched(const Arguments& arg)
     // (intermediate arrays used for the transfers)
     T* x_1[batch_count];
     T* x_2[batch_count];
-    T* x_gold[batch_count];
 
     for(int i = 0; i < batch_count; i++)
     {
-        hx_1[i] = host_vector<T>(size_x);
-        hx_2[i] = host_vector<T>(size_x);
+        hx_1[i]    = host_vector<T>(size_x);
+        hx_2[i]    = host_vector<T>(size_x);
         hx_gold[i] = host_vector<T>(size_x);
 
         hipMalloc(&x_1[i], size_x * sizeof(T));
         hipMalloc(&x_2[i], size_x * sizeof(T));
-        hipMalloc(&x_gold[i], size_x * sizeof(T));
     }
 
     int last = batch_count - 1;
-    if((!x_1[last] && size_x) || (!x_2[last] && size_x) || (!x_gold[last] && size_x))
+    if((!x_1[last] && size_x) || (!x_2[last] && size_x))
     {
         CHECK_HIP_ERROR(hipErrorOutOfMemory);
         return;
@@ -122,11 +121,13 @@ void testing_scal_batched(const Arguments& arg)
 
         // GPU BLAS, rocblas_pointer_mode_host
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
-        CHECK_ROCBLAS_ERROR((rocblas_scal_batched<T, U>(handle, N, &h_alpha, dx_1, incx, batch_count)));
+        CHECK_ROCBLAS_ERROR(
+            (rocblas_scal_batched<T, U>(handle, N, &h_alpha, dx_1, incx, batch_count)));
 
         // GPU BLAS, rocblas_pointer_mode_device
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_device));
-        CHECK_ROCBLAS_ERROR((rocblas_scal_batched<T, U>(handle, N, d_alpha, dx_2, incx, batch_count)));
+        CHECK_ROCBLAS_ERROR(
+            (rocblas_scal_batched<T, U>(handle, N, d_alpha, dx_2, incx, batch_count)));
 
         // copy output from device to CPU
         for(int i = 0; i < batch_count; i++)
@@ -150,11 +151,11 @@ void testing_scal_batched(const Arguments& arg)
             unit_check_general<T>(1, N, batch_count, incx, hx_gold, hx_2);
         }
 
-        // if(arg.norm_check)
-        // {
-        //     rocblas_error_1 = norm_check_general<T>('F', 1, N, incx, hx_gold, hx_1);
-        //     rocblas_error_2 = norm_check_general<T>('F', 1, N, incx, hx_gold, hx_2);
-        // }
+        if(arg.norm_check)
+        {
+            rocblas_error_1 = norm_check_general<T>('F', 1, N, incx, batch_count, hx_gold, hx_1);
+            rocblas_error_2 = norm_check_general<T>('F', 1, N, incx, batch_count, hx_gold, hx_2);
+        }
 
     } // end of if unit/norm check
 
@@ -200,7 +201,6 @@ void testing_scal_batched(const Arguments& arg)
     {
         CHECK_HIP_ERROR(hipFree(x_1[i]));
         CHECK_HIP_ERROR(hipFree(x_2[i]));
-        CHECK_HIP_ERROR(hipFree(x_gold[i]));
     }
     CHECK_HIP_ERROR(hipFree(dx_1));
     CHECK_HIP_ERROR(hipFree(dx_2));
@@ -227,8 +227,11 @@ void testing_scal_batched_bad_arg(const Arguments& arg)
         return;
     }
 
-    EXPECT_ROCBLAS_STATUS((rocblas_scal_batched<T, U>)(handle, N, nullptr, dx, incx, batch_count), rocblas_status_invalid_pointer);
-    EXPECT_ROCBLAS_STATUS((rocblas_scal_batched<T, U>)(handle, N, &h_alpha, nullptr, incx, batch_count), rocblas_status_invalid_pointer);
+    EXPECT_ROCBLAS_STATUS((rocblas_scal_batched<T, U>)(handle, N, nullptr, dx, incx, batch_count),
+                          rocblas_status_invalid_pointer);
+    EXPECT_ROCBLAS_STATUS(
+        (rocblas_scal_batched<T, U>)(handle, N, &h_alpha, nullptr, incx, batch_count),
+        rocblas_status_invalid_pointer);
 
     CHECK_HIP_ERROR(hipFree(dx));
 }

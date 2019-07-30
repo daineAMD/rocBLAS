@@ -14,8 +14,6 @@
 #include "unit.hpp"
 #include "utility.hpp"
 
-
-
 template <typename T, typename U = T>
 void testing_scal_strided_batched(const Arguments& arg)
 {
@@ -39,11 +37,18 @@ void testing_scal_strided_batched(const Arguments& arg)
         }
 
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
-        CHECK_ROCBLAS_ERROR((rocblas_scal_strided_batched<T, U>)(handle, N, &h_alpha, dx, incx, stridex, batch_count));
+        CHECK_ROCBLAS_ERROR((rocblas_scal_strided_batched<T, U>)(handle,
+                                                                 N,
+                                                                 &h_alpha,
+                                                                 dx,
+                                                                 incx,
+                                                                 stridex,
+                                                                 batch_count));
         return;
     }
 
-    size_t size_x = N * size_t(incx) * batch_count + static_cast<size_t>(stridex) * static_cast<size_t>(batch_count - 1);
+    size_t size_x = N * size_t(incx) * batch_count
+                    + static_cast<size_t>(stridex) * static_cast<size_t>(batch_count - 1);
 
     // Naming: dX is in GPU (device) memory. hK is in CPU (host) memory, plz follow this practice
     host_vector<T> hx_1(size_x);
@@ -53,11 +58,6 @@ void testing_scal_strided_batched(const Arguments& arg)
     // Initial Data on CPU
     rocblas_seedrand();
     rocblas_init<T>(hx_1, 1, N, incx, stridex, batch_count);
-    std::cout << "----------\nORIG--------\n";
-    for(int i = 0; i < size_x; i++)
-        if(hx_1[i] != 0)
-            std::cout<< "hx_1[" << i << "] = " << hx_1[i] << "\n";
-    std::cout<<"------------------------\n";
 
     // copy vector is easy in STL; hx_gold = hx: save a copy in hx_gold which will be output of CPU
     // BLAS
@@ -91,11 +91,13 @@ void testing_scal_strided_batched(const Arguments& arg)
 
         // GPU BLAS, rocblas_pointer_mode_host
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
-        CHECK_ROCBLAS_ERROR((rocblas_scal_strided_batched<T, U>(handle, N, &h_alpha, dx_1, incx, stridex, batch_count)));
+        CHECK_ROCBLAS_ERROR((rocblas_scal_strided_batched<T, U>(
+            handle, N, &h_alpha, dx_1, incx, stridex, batch_count)));
 
         // GPU BLAS, rocblas_pointer_mode_device
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_device));
-        CHECK_ROCBLAS_ERROR((rocblas_scal_strided_batched<T, U>(handle, N, d_alpha, dx_2, incx, stridex, batch_count)));
+        CHECK_ROCBLAS_ERROR((rocblas_scal_strided_batched<T, U>(
+            handle, N, d_alpha, dx_2, incx, stridex, batch_count)));
 
         // copy output from device to CPU
         CHECK_HIP_ERROR(hipMemcpy(hx_1, dx_1, sizeof(T) * size_x, hipMemcpyDeviceToHost));
@@ -117,11 +119,13 @@ void testing_scal_strided_batched(const Arguments& arg)
             unit_check_general<T>(1, N, batch_count, incx, stridex, hx_gold, hx_2);
         }
 
-        // if(arg.norm_check)
-        // {
-        //     rocblas_error_1 = norm_check_general<T>('F', 1, N, incx, hx_gold, hx_1);
-        //     rocblas_error_2 = norm_check_general<T>('F', 1, N, incx, hx_gold, hx_2);
-        // }
+        if(arg.norm_check)
+        {
+            rocblas_error_1
+                = norm_check_general<T>('F', 1, N, incx, stridex, batch_count, hx_gold, hx_1);
+            rocblas_error_2
+                = norm_check_general<T>('F', 1, N, incx, stridex, batch_count, hx_gold, hx_2);
+        }
 
     } // end of if unit/norm check
 
@@ -133,14 +137,16 @@ void testing_scal_strided_batched(const Arguments& arg)
 
         for(int iter = 0; iter < number_cold_calls; iter++)
         {
-            rocblas_scal_strided_batched<T, U>(handle, N, &h_alpha, dx_1, incx, stridex, batch_count);
+            rocblas_scal_strided_batched<T, U>(
+                handle, N, &h_alpha, dx_1, incx, stridex, batch_count);
         }
 
         gpu_time_used = get_time_us(); // in microseconds
 
         for(int iter = 0; iter < number_hot_calls; iter++)
         {
-            rocblas_scal_strided_batched<T, U>(handle, N, &h_alpha, dx_1, incx, stridex, batch_count);
+            rocblas_scal_strided_batched<T, U>(
+                handle, N, &h_alpha, dx_1, incx, stridex, batch_count);
         }
 
         gpu_time_used     = (get_time_us() - gpu_time_used) / number_hot_calls;
@@ -185,6 +191,15 @@ void testing_scal_strided_batched_bad_arg(const Arguments& arg)
         return;
     }
 
-    EXPECT_ROCBLAS_STATUS((rocblas_scal_strided_batched<T, U>)(handle, N, nullptr, dx, incx, stridex, batch_count), rocblas_status_invalid_pointer);
-    EXPECT_ROCBLAS_STATUS((rocblas_scal_strided_batched<T, U>)(handle, N, &h_alpha, nullptr, incx, stridex, batch_count), rocblas_status_invalid_pointer);
+    EXPECT_ROCBLAS_STATUS(
+        (rocblas_scal_strided_batched<T, U>)(handle, N, nullptr, dx, incx, stridex, batch_count),
+        rocblas_status_invalid_pointer);
+    EXPECT_ROCBLAS_STATUS((rocblas_scal_strided_batched<T, U>)(handle,
+                                                               N,
+                                                               &h_alpha,
+                                                               nullptr,
+                                                               incx,
+                                                               stridex,
+                                                               batch_count),
+                          rocblas_status_invalid_pointer);
 }

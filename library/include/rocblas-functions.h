@@ -83,17 +83,11 @@ extern "C" {
 
     ********************************************************************/
 
-ROCBLAS_EXPORT rocblas_status rocblas_sscal(rocblas_handle handle,
-                                            rocblas_int    n,
-                                            const float*   alpha,
-                                            float*         x,
-                                            rocblas_int    incx);
+ROCBLAS_EXPORT rocblas_status rocblas_sscal(
+    rocblas_handle handle, rocblas_int n, const float* alpha, float* x, rocblas_int incx);
 
-ROCBLAS_EXPORT rocblas_status rocblas_dscal(rocblas_handle handle,
-                                            rocblas_int    n,
-                                            const double*  alpha,
-                                            double*        x,
-                                            rocblas_int    incx);
+ROCBLAS_EXPORT rocblas_status rocblas_dscal(
+    rocblas_handle handle, rocblas_int n, const double* alpha, double* x, rocblas_int incx);
 
 ROCBLAS_EXPORT rocblas_status rocblas_cscal(rocblas_handle               handle,
                                             rocblas_int                  n,
@@ -237,7 +231,7 @@ ROCBLAS_EXPORT rocblas_status rocblas_cscal_strided_batched(rocblas_handle      
                                                             rocblas_float_complex*       x,
                                                             rocblas_int                  incx,
                                                             rocblas_int                  stridex,
-                                                            rocblas_int                  batch_count);
+                                                            rocblas_int batch_count);
 
 ROCBLAS_EXPORT rocblas_status rocblas_zscal_strided_batched(rocblas_handle                handle,
                                                             rocblas_int                   n,
@@ -245,7 +239,7 @@ ROCBLAS_EXPORT rocblas_status rocblas_zscal_strided_batched(rocblas_handle      
                                                             rocblas_double_complex*       x,
                                                             rocblas_int                   incx,
                                                             rocblas_int                   stridex,
-                                                            rocblas_int                   batch_count);
+                                                            rocblas_int batch_count);
 
 ROCBLAS_EXPORT rocblas_status rocblas_csscal_strided_batched(rocblas_handle         handle,
                                                              rocblas_int            n,

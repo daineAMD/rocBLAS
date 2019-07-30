@@ -231,44 +231,44 @@ void unit_check_general(rocblas_int    M,
 
 template <>
 inline void unit_check_general(rocblas_int        M,
-                        rocblas_int        N,
-                        rocblas_int        batch_count,
-                        rocblas_int        lda,
-                        host_vector<float> hCPU[],
-                        host_vector<float> hGPU[])
+                               rocblas_int        N,
+                               rocblas_int        batch_count,
+                               rocblas_int        lda,
+                               host_vector<float> hCPU[],
+                               host_vector<float> hGPU[])
 {
     UNIT_CHECK_B(M, N, batch_count, lda, hCPU, hGPU, ASSERT_FLOAT_EQ);
 }
 
 template <>
 inline void unit_check_general(rocblas_int         M,
-                        rocblas_int         N,
-                        rocblas_int         batch_count,
-                        rocblas_int         lda,
-                        host_vector<double> hCPU[],
-                        host_vector<double> hGPU[])
+                               rocblas_int         N,
+                               rocblas_int         batch_count,
+                               rocblas_int         lda,
+                               host_vector<double> hCPU[],
+                               host_vector<double> hGPU[])
 {
     UNIT_CHECK_B(M, N, batch_count, lda, hCPU, hGPU, ASSERT_DOUBLE_EQ);
 }
 
 template <>
 inline void unit_check_general(rocblas_int                        M,
-                        rocblas_int                        N,
-                        rocblas_int                        batch_count,
-                        rocblas_int                        lda,
-                        host_vector<rocblas_float_complex> hCPU[],
-                        host_vector<rocblas_float_complex> hGPU[])
+                               rocblas_int                        N,
+                               rocblas_int                        batch_count,
+                               rocblas_int                        lda,
+                               host_vector<rocblas_float_complex> hCPU[],
+                               host_vector<rocblas_float_complex> hGPU[])
 {
     UNIT_CHECK_B(M, N, batch_count, lda, hCPU, hGPU, ASSERT_FLOAT_COMPLEX_EQ);
 }
 
 template <>
 inline void unit_check_general(rocblas_int                         M,
-                        rocblas_int                         N,
-                        rocblas_int                         batch_count,
-                        rocblas_int                         lda,
-                        host_vector<rocblas_double_complex> hCPU[],
-                        host_vector<rocblas_double_complex> hGPU[])
+                               rocblas_int                         N,
+                               rocblas_int                         batch_count,
+                               rocblas_int                         lda,
+                               host_vector<rocblas_double_complex> hCPU[],
+                               host_vector<rocblas_double_complex> hGPU[])
 {
     UNIT_CHECK_B(M, N, batch_count, lda, hCPU, hGPU, ASSERT_DOUBLE_COMPLEX_EQ);
 }

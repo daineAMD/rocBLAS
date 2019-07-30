@@ -28,7 +28,9 @@ namespace
         copy,
         dot,
         dotc,
-        scal, scal_batched, scal_strided_batched,
+        scal,
+        scal_batched,
+        scal_strided_batched,
         swap,
     };
 
@@ -98,7 +100,9 @@ namespace
                     || std::is_same<Ti, rocblas_double_complex>{} || std::is_same<Ti, float>{}
                     || std::is_same<Ti, double>{}))
 
-            || ((BLAS1 == blas1::scal || BLAS1 == blas1::scal_batched || BLAS1 == blas1::scal_strided_batched) && std::is_same<To, Tc>{}
+            || ((BLAS1 == blas1::scal || BLAS1 == blas1::scal_batched
+                 || BLAS1 == blas1::scal_strided_batched)
+                && std::is_same<To, Tc>{}
                 && ((std::is_same<Ti, rocblas_float_complex>{} && std::is_same<Ti, To>{})
                     || (std::is_same<Ti, rocblas_double_complex>{} && std::is_same<Ti, To>{})
                     || (std::is_same<Ti, float>{} && std::is_same<Ti, To>{})

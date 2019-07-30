@@ -25,11 +25,8 @@ namespace
     constexpr char rocblas_scal_name<rocblas_double_complex, double>[] = "rocblas_zdscal";
 
     template <typename T, typename U>
-    rocblas_status rocblas_scal_impl(rocblas_handle handle,
-                                     rocblas_int    n,
-                                     const U*       alpha,
-                                     T*             x,
-                                     rocblas_int    incx)
+    rocblas_status rocblas_scal_impl(
+        rocblas_handle handle, rocblas_int n, const U* alpha, T* x, rocblas_int incx)
     {
         if(!handle)
             return rocblas_status_invalid_handle;
@@ -91,20 +88,14 @@ namespace
 
 extern "C" {
 
-rocblas_status rocblas_sscal(rocblas_handle handle,
-                             rocblas_int    n,
-                             const float*   alpha,
-                             float*         x,
-                             rocblas_int    incx)
+rocblas_status rocblas_sscal(
+    rocblas_handle handle, rocblas_int n, const float* alpha, float* x, rocblas_int incx)
 {
     return rocblas_scal_impl(handle, n, alpha, x, incx);
 }
 
-rocblas_status rocblas_dscal(rocblas_handle handle,
-                             rocblas_int    n,
-                             const double*  alpha,
-                             double*        x,
-                             rocblas_int    incx)
+rocblas_status rocblas_dscal(
+    rocblas_handle handle, rocblas_int n, const double* alpha, double* x, rocblas_int incx)
 {
     return rocblas_scal_impl(handle, n, alpha, x, incx);
 }

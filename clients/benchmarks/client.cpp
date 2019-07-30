@@ -416,7 +416,8 @@ int run_bench_test(Arguments& arg)
     else
 #endif
     {
-        if(!strcmp(function, "scal"))
+        if(!strcmp(function, "scal") || !strcmp(function, "scal_batched")
+           || !strcmp(function, "scal_strided_batched"))
             rocblas_blas1_dispatch<perf_blas_scal>(arg);
         else
             rocblas_simple_dispatch<perf_blas>(arg);

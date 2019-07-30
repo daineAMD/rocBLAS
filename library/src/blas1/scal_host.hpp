@@ -7,11 +7,8 @@
 #include "utility.h"
 
 template <typename T, typename U>
-rocblas_status rocblas_scal_template(rocblas_handle handle,
-                                     rocblas_int    n,
-                                     const U*       alpha,
-                                     T*             x,
-                                     rocblas_int    incx)
+rocblas_status rocblas_scal_template(
+    rocblas_handle handle, rocblas_int n, const U* alpha, T* x, rocblas_int incx)
 {
     static constexpr int NB = 256;
     // Quick return if possible. Not Argument error
@@ -23,9 +20,11 @@ rocblas_status rocblas_scal_template(rocblas_handle handle,
     hipStream_t rocblas_stream = handle->rocblas_stream;
 
     if(rocblas_pointer_mode_device == handle->pointer_mode)
-        hipLaunchKernelGGL(scal_kernel_strided_batched, blocks, threads, 0, rocblas_stream, n, alpha, x, incx, 0);
+        hipLaunchKernelGGL(
+            scal_kernel_strided_batched, blocks, threads, 0, rocblas_stream, n, alpha, x, incx, 0);
     else // alpha is on host
-        hipLaunchKernelGGL(scal_kernel_strided_batched, blocks, threads, 0, rocblas_stream, n, *alpha, x, incx, 0);
+        hipLaunchKernelGGL(
+            scal_kernel_strided_batched, blocks, threads, 0, rocblas_stream, n, *alpha, x, incx, 0);
 
     return rocblas_status_success;
 }
@@ -48,9 +47,11 @@ rocblas_status rocblas_scal_batched_template(rocblas_handle handle,
     hipStream_t rocblas_stream = handle->rocblas_stream;
 
     if(rocblas_pointer_mode_device == handle->pointer_mode)
-        hipLaunchKernelGGL(scal_kernel_batched, blocks, threads, 0, rocblas_stream, n, alpha, x, incx);
+        hipLaunchKernelGGL(
+            scal_kernel_batched, blocks, threads, 0, rocblas_stream, n, alpha, x, incx);
     else // alpha is on host
-        hipLaunchKernelGGL(scal_kernel_batched, blocks, threads, 0, rocblas_stream, n, *alpha, x, incx);
+        hipLaunchKernelGGL(
+            scal_kernel_batched, blocks, threads, 0, rocblas_stream, n, *alpha, x, incx);
 
     return rocblas_status_success;
 }
@@ -74,9 +75,27 @@ rocblas_status rocblas_scal_strided_batched_template(rocblas_handle handle,
     hipStream_t rocblas_stream = handle->rocblas_stream;
 
     if(rocblas_pointer_mode_device == handle->pointer_mode)
-        hipLaunchKernelGGL(scal_kernel_strided_batched, blocks, threads, 0, rocblas_stream, n, alpha, x, incx, stridex);
+        hipLaunchKernelGGL(scal_kernel_strided_batched,
+                           blocks,
+                           threads,
+                           0,
+                           rocblas_stream,
+                           n,
+                           alpha,
+                           x,
+                           incx,
+                           stridex);
     else // alpha is on host
-        hipLaunchKernelGGL(scal_kernel_strided_batched, blocks, threads, 0, rocblas_stream, n, *alpha, x, incx, stridex);
+        hipLaunchKernelGGL(scal_kernel_strided_batched,
+                           blocks,
+                           threads,
+                           0,
+                           rocblas_stream,
+                           n,
+                           *alpha,
+                           x,
+                           incx,
+                           stridex);
 
     return rocblas_status_success;
 }
