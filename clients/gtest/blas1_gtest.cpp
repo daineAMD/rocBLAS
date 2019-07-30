@@ -69,6 +69,11 @@ namespace
                || BLAS1 == blas1::swap)
                 name << '_' << arg.incy;
 
+            if(BLAS1 == blas1::scal_strided_batched)
+                name << "_" << arg.stride_x;
+            if(BLAS1 == blas1::scal_batched || BLAS1 == blas1::scal_strided_batched)
+                name << "_" << arg.batch_count;
+
             return std::move(name);
         }
     };

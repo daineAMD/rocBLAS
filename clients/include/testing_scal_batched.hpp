@@ -25,7 +25,7 @@ void testing_scal_batched(const Arguments& arg)
     rocblas_local_handle handle;
 
     // argument sanity check before allocating invalid memory
-    if(N <= 0 || incx <= 0) // ???
+    if(N <= 0 || incx <= 0 || batch_count <= 0)
     {
         static const size_t safe_size = 100; // arbitrarily set to 100
         T**                 dx;

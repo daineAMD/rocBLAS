@@ -94,6 +94,9 @@ namespace
         if(!x)
             return rocblas_status_invalid_pointer;
 
+        if(stridex < n * incx)
+            return rocblas_status_invalid_size;
+
         RETURN_ZERO_DEVICE_MEMORY_SIZE_IF_QUERIED(handle);
 
         return rocblas_scal_strided_batched_template(

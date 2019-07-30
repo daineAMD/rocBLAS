@@ -85,23 +85,23 @@ Tests:
 
   - name: blas1_batched
     category: pre_checkin
-    N: [ 1048576, 1049600, 8000000 ]
+    N: [ 1048576, 4000000 ]
     incx_incy: *incx_incy_range
     alpha_beta: *alpha_beta_range
     alphai_betai: *alphai_betai_range
-    batch_count: [1, 10]
+    batch_count: [-1, 0, 1, 20]
     function:
       - scal_batched: *single_double_precisions_complex_real
       - scal_batched:  *single_double_complex_real_in_complex_out
 
   - name: blas1_strided_batched
     category: pre_checkin
-    N: [ 1048576, 1049600, 4000000 ]
+    N: [ 1048576, 4000000 ]
     incx_incy: *incx_incy_range
     alpha_beta: *alpha_beta_range
     alphai_betai: *alphai_betai_range
-    batch_count: [1, 10]
-    stride_x: [1, 1000, 100000]
+    batch_count: [-1, 0, 1, 20]
+    stride_x: [-1, 1, 100000, 10000000]
     function:
       - scal_strided_batched: *single_double_precisions_complex_real
       - scal_strided_batched:  *single_double_complex_real_in_complex_out

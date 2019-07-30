@@ -26,7 +26,29 @@ void testing_scal_strided_batched(const Arguments& arg)
     rocblas_local_handle handle;
 
     // argument sanity check before allocating invalid memory
-    if(N <= 0 || incx <= 0 || stridex < (N * incx) || batch_count < 0)
+    if(stridex < N * incx)
+    {
+        static const size_t safe_size = 100; // arbitrarily set to 100
+        device_vector<T>    dx(safe_size);
+        if(!dx)
+        {
+            CHECK_HIP_ERROR(hipErrorOutOfMemory);
+            return;
+        }
+
+        CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
+        EXPECT_ROCBLAS_STATUS((rocblas_scal_strided_batched<T, U>)(handle,
+                                                                   N,
+                                                                   &h_alpha,
+                                                                   dx,
+                                                                   incx,
+                                                                   stridex,
+                                                                   batch_count),
+                              rocblas_status_invalid_size);
+        return;
+    }
+    if(N <= 0 || incx <= 0
+       || batch_count <= 0) // TODO: should these quick return or return invalid_size?
     {
         static const size_t safe_size = 100; // arbitrarily set to 100
         device_vector<T>    dx(safe_size);
