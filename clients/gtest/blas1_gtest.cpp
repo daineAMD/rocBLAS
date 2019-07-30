@@ -11,7 +11,7 @@
 #include "testing_nrm2.hpp"
 #include "testing_scal.hpp"
 #include "testing_scal_batched.hpp"
-// #include "testing_scal_strided_batched.hpp"
+#include "testing_scal_strided_batched.hpp"
 #include "testing_swap.hpp"
 #include "type_dispatch.hpp"
 #include "utility.hpp"
@@ -98,7 +98,7 @@ namespace
                     || std::is_same<Ti, rocblas_double_complex>{} || std::is_same<Ti, float>{}
                     || std::is_same<Ti, double>{}))
 
-            || ((BLAS1 == blas1::scal || BLAS1 == blas1::scal_batched) && std::is_same<To, Tc>{}
+            || ((BLAS1 == blas1::scal || BLAS1 == blas1::scal_batched || BLAS1 == blas1::scal_strided_batched) && std::is_same<To, Tc>{}
                 && ((std::is_same<Ti, rocblas_float_complex>{} && std::is_same<Ti, To>{})
                     || (std::is_same<Ti, rocblas_double_complex>{} && std::is_same<Ti, To>{})
                     || (std::is_same<Ti, float>{} && std::is_same<Ti, To>{})
@@ -186,7 +186,7 @@ BLAS1_TESTING(dot,   ARG1)
 BLAS1_TESTING(dotc,  ARG1)
 BLAS1_TESTING(scal,  ARG2)
 BLAS1_TESTING(scal_batched, ARG2)
-// BLAS1_TESTING(scal_strided_batched, ARG2)
+BLAS1_TESTING(scal_strided_batched, ARG2)
 BLAS1_TESTING(swap,  ARG1)
 
     // clang-format on

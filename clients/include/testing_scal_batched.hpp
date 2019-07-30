@@ -38,6 +38,7 @@ void testing_scal_batched(const Arguments& arg)
 
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
         CHECK_ROCBLAS_ERROR((rocblas_scal_batched<T, U>(handle, N, &h_alpha, dx, incx, batch_count)));
+        CHECK_HIP_ERROR(hipFree(dx));
         return;
     }
 
@@ -60,27 +61,27 @@ void testing_scal_batched(const Arguments& arg)
     // Host-arrays of pointers to host memory
     host_vector<T> hx_1[batch_count];
     host_vector<T> hx_2[batch_count];
-    host_vector<T> hy_gold[batch_count];
+    host_vector<T> hx_gold[batch_count];
 
     // Host-arrays of pointers to device memory
     // (intermediate arrays used for the transfers)
     T* x_1[batch_count];
     T* x_2[batch_count];
-    T* y_gold[batch_count];
+    T* x_gold[batch_count];
 
     for(int i = 0; i < batch_count; i++)
     {
         hx_1[i] = host_vector<T>(size_x);
         hx_2[i] = host_vector<T>(size_x);
-        hy_gold[i] = host_vector<T>(size_x);
+        hx_gold[i] = host_vector<T>(size_x);
 
         hipMalloc(&x_1[i], size_x * sizeof(T));
         hipMalloc(&x_2[i], size_x * sizeof(T));
-        hipMalloc(&y_gold[i], size_x * sizeof(T));
+        hipMalloc(&x_gold[i], size_x * sizeof(T));
     }
 
     int last = batch_count - 1;
-    if((!x_1[last] && size_x) || (!x_2[last] && size_x) || (!y_gold[last] && size_x))
+    if((!x_1[last] && size_x) || (!x_2[last] && size_x) || (!x_gold[last] && size_x))
     {
         CHECK_HIP_ERROR(hipErrorOutOfMemory);
         return;
@@ -93,7 +94,7 @@ void testing_scal_batched(const Arguments& arg)
         rocblas_init<T>(hx_1[i], 1, N, incx);
 
         hx_2[i]    = hx_1[i];
-        hy_gold[i] = hx_1[i];
+        hx_gold[i] = hx_1[i];
     }
 
     // copy data from CPU to device, does not work for incx != 1
@@ -138,21 +139,21 @@ void testing_scal_batched(const Arguments& arg)
         cpu_time_used = get_time_us();
         for(int i = 0; i < batch_count; i++)
         {
-            cblas_scal<T, U>(N, h_alpha, hy_gold[i], incx);
+            cblas_scal<T, U>(N, h_alpha, hx_gold[i], incx);
         }
         cpu_time_used = get_time_us() - cpu_time_used;
         cblas_gflops  = axpy_gflop_count<T>(N) / cpu_time_used * 1e6 * 1;
 
         if(arg.unit_check)
         {
-            unit_check_general<T>(1, N, batch_count, incx, hy_gold, hx_1);
-            unit_check_general<T>(1, N, batch_count, incx, hy_gold, hx_2);
+            unit_check_general<T>(1, N, batch_count, incx, hx_gold, hx_1);
+            unit_check_general<T>(1, N, batch_count, incx, hx_gold, hx_2);
         }
 
         // if(arg.norm_check)
         // {
-        //     rocblas_error_1 = norm_check_general<T>('F', 1, N, incx, hy_gold, hx_1);
-        //     rocblas_error_2 = norm_check_general<T>('F', 1, N, incx, hy_gold, hx_2);
+        //     rocblas_error_1 = norm_check_general<T>('F', 1, N, incx, hx_gold, hx_1);
+        //     rocblas_error_2 = norm_check_general<T>('F', 1, N, incx, hx_gold, hx_2);
         // }
 
     } // end of if unit/norm check
@@ -199,6 +200,7 @@ void testing_scal_batched(const Arguments& arg)
     {
         CHECK_HIP_ERROR(hipFree(x_1[i]));
         CHECK_HIP_ERROR(hipFree(x_2[i]));
+        CHECK_HIP_ERROR(hipFree(x_gold[i]));
     }
     CHECK_HIP_ERROR(hipFree(dx_1));
     CHECK_HIP_ERROR(hipFree(dx_2));
@@ -207,5 +209,26 @@ void testing_scal_batched(const Arguments& arg)
 template <typename T, typename U = T>
 void testing_scal_batched_bad_arg(const Arguments& arg)
 {
-    return;
+    rocblas_int N           = 100;
+    rocblas_int incx        = 1;
+    U           h_alpha     = U(1.0);
+    rocblas_int batch_count = 5;
+
+    rocblas_local_handle handle;
+
+    size_t size_x = N * size_t(incx);
+
+    // allocate memory on device
+    T** dx;
+    hipMalloc(&dx, batch_count * sizeof(T));
+    if(!dx)
+    {
+        CHECK_HIP_ERROR(hipErrorOutOfMemory);
+        return;
+    }
+
+    EXPECT_ROCBLAS_STATUS((rocblas_scal_batched<T, U>)(handle, N, nullptr, dx, incx, batch_count), rocblas_status_invalid_pointer);
+    EXPECT_ROCBLAS_STATUS((rocblas_scal_batched<T, U>)(handle, N, &h_alpha, nullptr, incx, batch_count), rocblas_status_invalid_pointer);
+
+    CHECK_HIP_ERROR(hipFree(dx));
 }
