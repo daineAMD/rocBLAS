@@ -21,24 +21,24 @@ Definitions:
     - { alphai: 2.0 }
 
 Tests:
-- name: blas1
-  category: quick
-  N: [ -1, 0, 5, 10, 500, 1000, 1024, 1025, 7111, 10000, 33792 ]
-  incx_incy: *incx_incy_range
-  alpha_beta: *alpha_beta_range
-  alphai_betai: *alphai_betai_range
-  function:
-    - nrm2:  *single_double_precisions_complex_real
-    - asum:  *single_double_precisions_complex_real
-    - iamax: *single_double_precisions_complex_real
-#   - iamin: *single_double_precisions_complex_real # broken for now -- cause unknown
-    - axpy:  *half_single_precisions_complex_real
-    - copy:  *single_double_precisions_complex_real
-    - dot:   *single_double_precisions_complex_real
-    - dotc:  *single_double_precisions_complex
-    - scal:  *single_double_precisions_complex_real
-    - scal:  *single_double_complex_real_in_complex_out
-    - swap:  *single_double_precisions_complex_real
+  - name: blas1
+    category: quick
+    N: [ -1, 0, 5, 10, 500, 1000, 1024, 1025, 7111, 10000, 33792 ]
+    incx_incy: *incx_incy_range
+    alpha_beta: *alpha_beta_range
+    alphai_betai: *alphai_betai_range
+    function:
+      - nrm2:  *single_double_precisions_complex_real
+      - asum:  *single_double_precisions_complex_real
+      - iamax: *single_double_precisions_complex_real
+  #   - iamin: *single_double_precisions_complex_real # broken for now -- cause unknown
+      - axpy:  *half_single_precisions_complex_real
+      - copy:  *single_double_precisions_complex_real
+      - dot:   *single_double_precisions_complex_real
+      - dotc:  *single_double_precisions_complex
+      - scal:  *single_double_precisions_complex_real
+      - scal:  *single_double_complex_real_in_complex_out
+      - swap:  *single_double_precisions_complex_real
 
   - name: blas1_batched
     category: quick
