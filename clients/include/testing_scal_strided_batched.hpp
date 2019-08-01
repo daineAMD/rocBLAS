@@ -69,8 +69,7 @@ void testing_scal_strided_batched(const Arguments& arg)
         return;
     }
 
-    size_t size_x = N * size_t(incx) * batch_count
-                    + static_cast<size_t>(stridex) * static_cast<size_t>(batch_count - 1);
+    size_t size_x = N * size_t(incx) * batch_count + (static_cast<size_t>(stridex) - N * size_t(incx)) * static_cast<size_t>(batch_count - 1);
 
     // Naming: dX is in GPU (device) memory. hK is in CPU (host) memory, plz follow this practice
     host_vector<T> hx_1(size_x);
