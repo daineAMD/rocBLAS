@@ -47,7 +47,7 @@ void testing_trsm_strided_batched(const Arguments& arg)
     rocblas_local_handle handle;
 
     // check here to prevent undefined memory allocation error
-    if(M < 0 || N < 0 || lda < K || ldb < M || batch_count <= 0 || (batch_count > 1 && (stride_a < lda * K || stride_b < ldb * N))) // TODO: stride_a and stride_b checks.
+    if(M < 0 || N < 0 || lda < K || ldb < M || batch_count <= 0 || (batch_count > 1 && (stride_a < lda * K || stride_b < ldb * N)))
     {
         static const size_t safe_size = 100; // arbitrarily set to 100
         device_vector<T>    dA(safe_size);
@@ -179,9 +179,6 @@ void testing_trsm_strided_batched(const Arguments& arg)
             
         }
     }
-    // std::cout << "\nhA at b = 0: ";
-    // for(int i = 0; i < 16; i++)
-    //     std::cout << hA[i] << ",";
 
     // Initial hX
     rocblas_init<T>(hX, M, N, ldb, stride_b, batch_count);
@@ -191,9 +188,6 @@ void testing_trsm_strided_batched(const Arguments& arg)
             for(int j = 0; j < N; j++)
                 hX[i + j * ldb + b * stride_b] = 0.0;
     hB = hX;
-    // std::cout << "\nans at b = 0: ";
-    // for(int i = 0; i < 16; i++)
-    //     std::cout << hB[i] << ",";
 
     // Calculate hB = hA*hX;
     for(int b = 0; b < batch_count; b++)
@@ -202,10 +196,6 @@ void testing_trsm_strided_batched(const Arguments& arg)
     hXorB_1 = hB; // hXorB <- B
     hXorB_2 = hB; // hXorB <- B
     cpuXorB = hB; // cpuXorB <- B
-    // std::cout << "\nhB at b = 0: ";
-    // for(int i = 0; i < 16; i++)
-    //     std::cout << hB[i] << ",";
-    // std::cout << "\n";
 
     // copy data from CPU to device
     CHECK_HIP_ERROR(hipMemcpy(dA, hA, sizeof(T) * size_A, hipMemcpyHostToDevice));
@@ -221,10 +211,10 @@ void testing_trsm_strided_batched(const Arguments& arg)
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
         CHECK_HIP_ERROR(hipMemcpy(dXorB, hXorB_1, sizeof(T) * size_B, hipMemcpyHostToDevice));
 
-        for(int b = 0; b < batch_count; b++)
-            CHECK_ROCBLAS_ERROR(rocblas_trsm<T>(handle, side, uplo, transA, diag, M, N, &alpha_h, dA + b * stride_a, lda, dXorB + b * stride_b, ldb));
-        // CHECK_ROCBLAS_ERROR(
-        //     rocblas_trsm_strided_batched<T>(handle, side, uplo, transA, diag, M, N, &alpha_h, dA, lda, stride_a, dXorB, ldb, stride_b, batch_count));
+        // for(int b = 0; b < batch_count; b++)
+        //     CHECK_ROCBLAS_ERROR(rocblas_trsm<T>(handle, side, uplo, transA, diag, M, N, &alpha_h, dA + b * stride_a, lda, dXorB + b * stride_b, ldb));
+        CHECK_ROCBLAS_ERROR(
+            rocblas_trsm_strided_batched<T>(handle, side, uplo, transA, diag, M, N, &alpha_h, dA, lda, stride_a, dXorB, ldb, stride_b, batch_count));
 
         CHECK_HIP_ERROR(hipMemcpy(hXorB_1, dXorB, sizeof(T) * size_B, hipMemcpyDeviceToHost));
 
@@ -233,10 +223,10 @@ void testing_trsm_strided_batched(const Arguments& arg)
         CHECK_HIP_ERROR(hipMemcpy(dXorB, hXorB_2, sizeof(T) * size_B, hipMemcpyHostToDevice));
         CHECK_HIP_ERROR(hipMemcpy(alpha_d, &alpha_h, sizeof(T), hipMemcpyHostToDevice));
 
-        for(int b = 0; b < batch_count; b++)
-            CHECK_ROCBLAS_ERROR(rocblas_trsm<T>(handle, side, uplo, transA, diag, M, N, alpha_d, dA + b * stride_a, lda, dXorB + b * stride_b, ldb));
-        // CHECK_ROCBLAS_ERROR(
-        //     rocblas_trsm_strided_batched<T>(handle, side, uplo, transA, diag, M, N, alpha_d, dA, lda, stride_a, dXorB, ldb, stride_b, batch_count));
+        // for(int b = 0; b < batch_count; b++)
+        //     CHECK_ROCBLAS_ERROR(rocblas_trsm<T>(handle, side, uplo, transA, diag, M, N, alpha_d, dA + b * stride_a, lda, dXorB + b * stride_b, ldb));
+        CHECK_ROCBLAS_ERROR(
+            rocblas_trsm_strided_batched<T>(handle, side, uplo, transA, diag, M, N, alpha_d, dA, lda, stride_a, dXorB, ldb, stride_b, batch_count));
 
         CHECK_HIP_ERROR(hipMemcpy(hXorB_2, dXorB, sizeof(T) * size_B, hipMemcpyDeviceToHost));
 
@@ -247,7 +237,6 @@ void testing_trsm_strided_batched(const Arguments& arg)
         // max_err is the maximum of err for all columns
         for(int b = 0; b < batch_count; b++)
         {
-            std::cout.precision(17);
             max_err_1 = max_err_2 = 0;
             for(int i = 0; i < N; i++)
             {
@@ -256,22 +245,10 @@ void testing_trsm_strided_batched(const Arguments& arg)
                 for(int j = 0; j < M; j++)
                 {
                     int idx = j + i * ldb + b * stride_b;
-                    // if(std::abs(hX[idx] - hXorB_1[idx]) > 0.001f)
-                    // if(b == 15)
-                    // {
-                    //     // std::cout << "batch: " << b << "\n";
-                        
-                    //     std::cout << "hX[" << idx << "]=" << hX[idx] << "\n";
-                    //     std::cout << "hXorB_1[" << idx << "]=" << hXorB_1[idx] << "\n";
-                    // }
                     if(hX[idx] != 0)
                     {
-                        // if(b==15)
-                        //     std::cout << "err1: " << err_1 << " -> ";
                         err_1 += std::abs((hX[idx] - hXorB_1[idx]) / hX[idx]);
                         err_2 += std::abs((hX[idx] - hXorB_2[idx]) / hX[idx]);
-                        // if(b==15)
-                        //     std::cout << err_1 << "\n";
                     }
                     else
                     {
@@ -279,12 +256,9 @@ void testing_trsm_strided_batched(const Arguments& arg)
                         err_2 += std::abs(hXorB_2[idx]);
                     }
                 }
-                // if(b==15)
-                    // std::cout << "-------------------------\n";
                 max_err_1 = max_err_1 > err_1 ? max_err_1 : err_1;
                 max_err_2 = max_err_2 > err_2 ? max_err_2 : err_2;
             }
-            // std::cout << "batch: " << b << "\n";
             trsm_err_res_check<T>(max_err_1, M, error_eps_multiplier, eps);
             trsm_err_res_check<T>(max_err_2, M, error_eps_multiplier, eps);
         }

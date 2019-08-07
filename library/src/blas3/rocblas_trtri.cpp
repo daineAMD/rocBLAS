@@ -40,7 +40,7 @@ namespace
         if(!mem)
             return rocblas_status_memory_error;
 
-        return rocblas_trtri_template<NB>(handle, uplo, diag, n, A, lda, invA, ldinvA, (T*)mem);
+        return rocblas_trtri_template<NB>(handle, uplo, diag, n, A, lda, 0, invA, ldinvA, 0, (T*)mem, 1);
     }
 
 } // namespace

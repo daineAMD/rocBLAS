@@ -4,6 +4,7 @@
 #include "handle.h"
 #include "rocblas.h"
 #include "trsm_device.hpp"
+// #include "trtri_trsm.hpp"
 #include "trtri_trsm.hpp"
 #include "utility.h"
 
@@ -813,7 +814,6 @@ namespace
                                                          size_t            B_chunk_size,
                                                          T*                x_temp)
     {
-        std::cout << "special...\n";
         bool        parity     = (transA == rocblas_operation_none) ^ (uplo == rocblas_fill_upper);
         size_t      k          = side == rocblas_side_left ? m : n;
         size_t      R          = k / BLOCK;
@@ -837,7 +837,7 @@ namespace
 
                     // copy a BLOCK*n piece we are solving at a time
                     if(!r || arch_lt906)
-                        copy_block_unit(handle, BLOCK, width, Bw + j * BLOCK, ldb, stride_B, x_temp, BLOCK, stride_X, batch_count); // TODO:
+                        copy_block_unit(handle, BLOCK, width, Bw + j * BLOCK, ldb, stride_B, x_temp, BLOCK, stride_X, batch_count);
 
                     if(r)
                     {
@@ -941,7 +941,7 @@ namespace
                     // copy a m*BLOCK piece we are solving at a time
                     if(!r || arch_lt906)
                         copy_block_unit(
-                            handle, width, BLOCK, Bw + j * BLOCK * ldb, ldb, stride_B, x_temp, width, stride_X, batch_count); // TODO
+                            handle, width, BLOCK, Bw + j * BLOCK * ldb, ldb, stride_B, x_temp, width, stride_X, batch_count);
 
                     if(r)
                     {
@@ -1084,7 +1084,9 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
                                                     rocblas_int       stride_invA        = 0)
 {
     if(batch_count <= 0)
+    {
         return rocblas_status_invalid_size;
+    }
 
     rocblas_int k = side == rocblas_side_left ? m : n;
     if(batch_count > 1)
@@ -1121,7 +1123,7 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
     if(!supplied_invA)
     {
         // Only allocate bytes for invA if supplied_invA == nullptr or supplied_invA_size is too small
-        invA_bytes = sizeof(T) * BLOCK * k * batch_count + ((batch_count - 1) * stride_invA); // TODO: ??
+        invA_bytes = sizeof(T) * BLOCK * k * batch_count + ((batch_count - 1) * stride_invA);
 
         // When k < BLOCK, C is unnecessary for trtri
         c_temp_bytes = (k / BLOCK) * (sizeof(T) * (BLOCK / 2) * (BLOCK / 2));
@@ -1138,9 +1140,9 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
     }
     else
     {
-        if(stride_invA < supplied_invA_size)
+        if(stride_invA < supplied_invA_size && batch_count > 1)
         {
-            return rocblas_status_invalid_size; // TODO: idk.
+            return rocblas_status_invalid_size;
         }
     }
 
@@ -1156,12 +1158,12 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
         B_chunk_size = size_t(m) + size_t(n) - size_t(k);
 
         // When k % BLOCK == 0, we only need BLOCK * B_chunk_size space
-        x_temp_bytes = sizeof(T) * BLOCK * B_chunk_size * batch_count; // TODO: ??
+        x_temp_bytes = sizeof(T) * BLOCK * B_chunk_size * batch_count;
     }
     else
     {
         // When k % BLOCK != 0, we need m * n space
-        x_temp_bytes = sizeof(T) * m * n * batch_count; // TODO: ??
+        x_temp_bytes = sizeof(T) * m * n * batch_count;
     }
 
     // X and C temporaries can share space, so the maximum size is allocated
@@ -1220,14 +1222,11 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
         auto c_temp = x_temp;
 
         // batched trtri invert diagonal part (BLOCK*BLOCK) of A into invA
-        for(int b = 0; b < batch_count; b++)
-        {
-            status = rocblas_trtri_trsm_template<BLOCK>(
-            handle, (T*)c_temp, uplo, diag, k, A + (b*stride_A), lda, (T*)invA + (b * stride_invA));
+        status = rocblas_trtri_trsm_template<BLOCK>(
+        handle, (T*)c_temp, uplo, diag, k, A, lda, stride_A, (T*)invA, stride_invA, batch_count);
 
-            if(status != rocblas_status_success)
-                return status;
-        }
+        if(status != rocblas_status_success)
+            return status;
     }
 
     if(exact_blocks)

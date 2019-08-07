@@ -15,7 +15,7 @@ Definitions:
     - { M:  1024, N:  1024, lda:  1024, ldb:  1024 }
     - { M:  2000, N:  2000, lda:  2000, ldb:  2000 }
 
-  - &alpha_range [ 1.0] #, -5.0 ]
+  - &alpha_range [ 1.0, -5.0 ]
 
   - &testset1_small_matrix_size_range
     - { M:      256,  N:        256,    lda:    256,    ldb:    256     }

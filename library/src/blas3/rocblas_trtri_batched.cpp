@@ -92,7 +92,7 @@ namespace
         if(n <= NB)
         {
             status = rocblas_trtri_small_batched<NB>(
-                handle, uplo, diag, n, A, lda, bsa, invA, ldinvA, bsinvA, batch_count);
+                handle, uplo, diag, n, A, lda, 0, bsa, invA, ldinvA, 0, bsinvA, 1, batch_count);
         }
         else
         {
@@ -109,7 +109,7 @@ namespace
                 return rocblas_status_memory_error;
 
             status = rocblas_trtri_large_batched<NB>(
-                handle, uplo, diag, n, A, lda, bsa, invA, ldinvA, bsinvA, batch_count, (T*)C_tmp);
+                handle, uplo, diag, n, A, lda, 0, bsa, invA, ldinvA, 0, bsinvA, 1, batch_count, (T*)C_tmp);
         }
 
         return status;
