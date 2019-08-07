@@ -46,7 +46,7 @@ Tests:
     incx_incy: *incx_incy_range
     alpha_beta: *alpha_beta_range
     alphai_betai: *alphai_betai_range
-    batch_count: [1, 10]
+    batch_count: [1, 25]
     function:
       - scal_batched: *single_double_precisions_complex_real
       - scal_batched: *single_double_complex_real_in_complex_out
@@ -57,8 +57,8 @@ Tests:
     incx_incy: *incx_incy_range
     alpha_beta: *alpha_beta_range
     alphai_betai: *alphai_betai_range
-    batch_count: [1, 10]
-    stride_x: [1, 1000, 100000]
+    batch_count: [1, 25]
+    stride_x: [1, 100000]
     function:
       - scal_strided_batched: *single_double_precisions_complex_real
       - scal_strided_batched: *single_double_complex_real_in_complex_out
@@ -89,7 +89,7 @@ Tests:
     incx_incy: *incx_incy_range
     alpha_beta: *alpha_beta_range
     alphai_betai: *alphai_betai_range
-    batch_count: [-1, 0, 1, 20]
+    batch_count: [-1, 0, 1, 5]
     function:
       - scal_batched: *single_double_precisions_complex_real
       - scal_batched:  *single_double_complex_real_in_complex_out
@@ -100,8 +100,8 @@ Tests:
     incx_incy: *incx_incy_range
     alpha_beta: *alpha_beta_range
     alphai_betai: *alphai_betai_range
-    batch_count: [-1, 0, 1, 20]
-    stride_x: [-1, 1, 100000, 10000000]
+    batch_count: [-1, 0, 1, 5]
+    stride_x: [-1, 10, 10000000]
     function:
       - scal_strided_batched: *single_double_precisions_complex_real
       - scal_strided_batched:  *single_double_complex_real_in_complex_out

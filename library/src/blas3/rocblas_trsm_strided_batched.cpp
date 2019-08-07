@@ -13,6 +13,11 @@
 #include <cstdio>
 #include <tuple>
 
+#define A(ii, jj) (A + (ii) + (jj)*lda)
+#define B(ii, jj) (B + (ii) + (jj)*ldb)
+#define X(ii, jj) (X + (ii) + (jj)*m)
+#define invA(ii) (invA + (ii)*BLOCK)
+
 namespace
 {
     // Shared memory usuage is (128/2)^2 * sizeof(float) = 32K. LDS is 64K per CU. Theoretically
@@ -23,27 +28,31 @@ namespace
     template <typename>
     constexpr char rocblas_trsm_name[] = "unknown";
     template <>
-    constexpr char rocblas_trsm_name<float>[] = "rocblas_strsm";
+    constexpr char rocblas_trsm_name<float>[] = "rocblas_strided_batched_strsm";
     template <>
-    constexpr char rocblas_trsm_name<double>[] = "rocblas_dtrsm";
+    constexpr char rocblas_trsm_name<double>[] = "rocblas_strided_batched_dtrsm";
 
     /* ============================================================================================ */
 
     template <rocblas_int BLOCK, typename T>
-    rocblas_status rocblas_trsm_ex_impl(rocblas_handle    handle,
-                                        rocblas_side      side,
-                                        rocblas_fill      uplo,
-                                        rocblas_operation transA,
-                                        rocblas_diagonal  diag,
-                                        rocblas_int       m,
-                                        rocblas_int       n,
-                                        const T*          alpha,
-                                        const T*          A,
-                                        rocblas_int       lda,
-                                        T*                B,
-                                        rocblas_int       ldb,
-                                        const T*          supplied_invA      = nullptr,
-                                        rocblas_int       supplied_invA_size = 0)
+    rocblas_status rocblas_trsm_strided_batched_ex_impl(rocblas_handle    handle,
+                                                        rocblas_side      side,
+                                                        rocblas_fill      uplo,
+                                                        rocblas_operation transA,
+                                                        rocblas_diagonal  diag,
+                                                        rocblas_int       m,
+                                                        rocblas_int       n,
+                                                        const T*          alpha,
+                                                        const T*          A,
+                                                        rocblas_int       lda,
+                                                        rocblas_int       stride_A,
+                                                        T*                B,
+                                                        rocblas_int       ldb,
+                                                        rocblas_int       stride_B,
+                                                        rocblas_int       batch_count,
+                                                        const T*          supplied_invA      = nullptr,
+                                                        rocblas_int       supplied_invA_size = 0,
+                                                        rocblas_int       stride_invA        = 0)
     {
         if(!handle)
             return rocblas_status_invalid_handle;
@@ -75,13 +84,16 @@ namespace
                               *alpha,
                               A,
                               lda,
+                              stride_A,
                               B,
-                              ldb);
+                              ldb,
+                              stride_B,
+                              batch_count);
 
                 if(layer_mode & rocblas_layer_mode_log_bench)
                 {
                     log_bench(handle,
-                              "./rocblas-bench -f trsm -r",
+                              "./rocblas-bench -f trsm_strided_batched -r",
                               rocblas_precision_string<T>,
                               "--side",
                               side_letter,
@@ -99,8 +111,14 @@ namespace
                               *alpha,
                               "--lda",
                               lda,
+                              "--stride_A",
+                              stride_A,
                               "--ldb",
-                              ldb);
+                              ldb,
+                              "--stride_B",
+                              stride_B,
+                              "--batch",
+                              batch_count);
                 }
             }
             else
@@ -117,8 +135,11 @@ namespace
                               alpha,
                               A,
                               lda,
+                              stride_A,
                               B,
-                              ldb);
+                              ldb,
+                              stride_B,
+                              batch_count);
             }
 
             if(layer_mode & rocblas_layer_mode_log_profile)
@@ -139,8 +160,14 @@ namespace
                             n,
                             "lda",
                             lda,
+                            "stride_A",
+                            stride_A,
                             "ldb",
-                            ldb);
+                            ldb,
+                            "stride_B",
+                            stride_B,
+                            "batch",
+                            batch_count);
             }
         }
 
@@ -164,6 +191,8 @@ namespace
         if(ldb < m)
             return rocblas_status_invalid_size;
 
+        // TODO: stride_a & stride_b & batch_count checks.
+
         //////////////////////
         // MEMORY MANAGEMENT//
         //////////////////////
@@ -173,7 +202,7 @@ namespace
             return handle->is_device_memory_size_query() ? rocblas_status_size_unchanged
                                                          : rocblas_status_success;
 
-        return rocblas_trsm_strided_batched_template<BLOCK, T>(handle, side, uplo, transA, diag, m, n, alpha, A, lda, 0, B, ldb, 0, 1, supplied_invA, supplied_invA_size);
+        return rocblas_trsm_strided_batched_template<BLOCK, T>(handle, side, uplo, transA, diag, m, n, alpha, A, lda, stride_A, B, ldb, stride_B, batch_count, supplied_invA, supplied_invA_size, stride_invA);
     }
 
 } // namespace
@@ -188,60 +217,69 @@ namespace
 
 extern "C" {
 
-rocblas_status rocblas_strsm(rocblas_handle    handle,
-                             rocblas_side      side,
-                             rocblas_fill      uplo,
-                             rocblas_operation transA,
-                             rocblas_diagonal  diag,
-                             rocblas_int       m,
-                             rocblas_int       n,
-                             const float*      alpha,
-                             const float*      A,
-                             rocblas_int       lda,
-                             float*            B,
-                             rocblas_int       ldb)
+rocblas_status rocblas_strsm_strided_batched(rocblas_handle    handle,
+                                             rocblas_side      side,
+                                             rocblas_fill      uplo,
+                                             rocblas_operation transA,
+                                             rocblas_diagonal  diag,
+                                             rocblas_int       m,
+                                             rocblas_int       n,
+                                             const float*      alpha,
+                                             const float*      A,
+                                             rocblas_int       lda,
+                                             rocblas_int       stride_A,
+                                             float*            B,
+                                             rocblas_int       ldb,
+                                             rocblas_int       stride_B,
+                                             rocblas_int       batch_count)
 {
-    return rocblas_trsm_ex_impl<STRSM_BLOCK>(
-        handle, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb);
+    return rocblas_trsm_strided_batched_ex_impl<STRSM_BLOCK>(
+        handle, side, uplo, transA, diag, m, n, alpha, A, lda, stride_A, B, ldb, stride_B, batch_count);
 }
 
-rocblas_status rocblas_dtrsm(rocblas_handle    handle,
-                             rocblas_side      side,
-                             rocblas_fill      uplo,
-                             rocblas_operation transA,
-                             rocblas_diagonal  diag,
-                             rocblas_int       m,
-                             rocblas_int       n,
-                             const double*     alpha,
-                             const double*     A,
-                             rocblas_int       lda,
-                             double*           B,
-                             rocblas_int       ldb)
+rocblas_status rocblas_dtrsm_strided_batched(rocblas_handle    handle,
+                                             rocblas_side      side,
+                                             rocblas_fill      uplo,
+                                             rocblas_operation transA,
+                                             rocblas_diagonal  diag,
+                                             rocblas_int       m,
+                                             rocblas_int       n,
+                                             const double*     alpha,
+                                             const double*     A,
+                                             rocblas_int       lda,
+                                             rocblas_int       stride_A,
+                                             double*           B,
+                                             rocblas_int       ldb,
+                                             rocblas_int       stride_B,
+                                             rocblas_int       batch_count)
 {
-    return rocblas_trsm_ex_impl<DTRSM_BLOCK>(
-        handle, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb);
+    return rocblas_trsm_strided_batched_ex_impl<DTRSM_BLOCK>(
+        handle, side, uplo, transA, diag, m, n, alpha, A, lda, stride_A, B, ldb, stride_B, batch_count);
 }
 
-rocblas_status rocblas_trsm_ex(rocblas_handle    handle,
-                               rocblas_side      side,
-                               rocblas_fill      uplo,
-                               rocblas_operation transA,
-                               rocblas_diagonal  diag,
-                               rocblas_int       m,
-                               rocblas_int       n,
-                               const void*       alpha,
-                               const void*       A,
-                               rocblas_int       lda,
-                               void*             B,
-                               rocblas_int       ldb,
-                               const void*       invA,
-                               rocblas_int       invA_size,
-                               rocblas_datatype  compute_type)
+rocblas_status rocblas_trsm_strided_batched_ex(rocblas_handle    handle,
+                                               rocblas_side      side,
+                                               rocblas_fill      uplo,
+                                               rocblas_operation transA,
+                                               rocblas_diagonal  diag,
+                                               rocblas_int       m,
+                                               rocblas_int       n,
+                                               const void*       alpha,
+                                               const void*       A,
+                                               rocblas_int       lda,
+                                               rocblas_int       stride_A,
+                                               void*             B,
+                                               rocblas_int       ldb,
+                                               rocblas_int       stride_B,
+                                               rocblas_int       batch_count,
+                                               const void*       invA,
+                                               rocblas_int       invA_size,
+                                               rocblas_datatype  compute_type)
 {
     switch(compute_type)
     {
     case rocblas_datatype_f64_r:
-        return rocblas_trsm_ex_impl<DTRSM_BLOCK>(handle,
+        return rocblas_trsm_strided_batched_ex_impl<DTRSM_BLOCK>(handle,
                                                  side,
                                                  uplo,
                                                  transA,
@@ -251,13 +289,16 @@ rocblas_status rocblas_trsm_ex(rocblas_handle    handle,
                                                  static_cast<const double*>(alpha),
                                                  static_cast<const double*>(A),
                                                  lda,
+                                                 stride_A,
                                                  static_cast<double*>(B),
                                                  ldb,
+                                                 stride_B,
+                                                 batch_count,
                                                  static_cast<const double*>(invA),
                                                  invA_size);
 
     case rocblas_datatype_f32_r:
-        return rocblas_trsm_ex_impl<STRSM_BLOCK>(handle,
+        return rocblas_trsm_strided_batched_ex_impl<STRSM_BLOCK>(handle,
                                                  side,
                                                  uplo,
                                                  transA,
@@ -267,8 +308,11 @@ rocblas_status rocblas_trsm_ex(rocblas_handle    handle,
                                                  static_cast<const float*>(alpha),
                                                  static_cast<const float*>(A),
                                                  lda,
+                                                 stride_A,
                                                  static_cast<float*>(B),
                                                  ldb,
+                                                 stride_B,
+                                                 batch_count,
                                                  static_cast<const float*>(invA),
                                                  invA_size);
 
