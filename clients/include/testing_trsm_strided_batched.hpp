@@ -234,8 +234,6 @@ void testing_trsm_strided_batched(const Arguments& arg)
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
         CHECK_HIP_ERROR(hipMemcpy(dXorB, hXorB_1, sizeof(T) * size_B, hipMemcpyHostToDevice));
 
-        // for(int b = 0; b < batch_count; b++)
-        //     CHECK_ROCBLAS_ERROR(rocblas_trsm<T>(handle, side, uplo, transA, diag, M, N, &alpha_h, dA + b * stride_a, lda, dXorB + b * stride_b, ldb));
         CHECK_ROCBLAS_ERROR(rocblas_trsm_strided_batched<T>(handle,
                                                             side,
                                                             uplo,
@@ -259,8 +257,6 @@ void testing_trsm_strided_batched(const Arguments& arg)
         CHECK_HIP_ERROR(hipMemcpy(dXorB, hXorB_2, sizeof(T) * size_B, hipMemcpyHostToDevice));
         CHECK_HIP_ERROR(hipMemcpy(alpha_d, &alpha_h, sizeof(T), hipMemcpyHostToDevice));
 
-        // for(int b = 0; b < batch_count; b++)
-        //     CHECK_ROCBLAS_ERROR(rocblas_trsm<T>(handle, side, uplo, transA, diag, M, N, alpha_d, dA + b * stride_a, lda, dXorB + b * stride_b, ldb));
         CHECK_ROCBLAS_ERROR(rocblas_trsm_strided_batched<T>(handle,
                                                             side,
                                                             uplo,
