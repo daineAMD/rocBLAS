@@ -6,7 +6,6 @@
 
 #include "utility.h"
 
-
 template <typename T>
 __device__ void copy_matrix_trsm(rocblas_int rows,
                                  rocblas_int cols,
@@ -35,9 +34,8 @@ __global__ void copy_matrix_strided_batched_trsm(rocblas_int rows,
                                                  rocblas_int stride_b)
 {
     const T* xa = a + hipBlockIdx_z * stride_a;
-    T* xb       = b + hipBlockIdx_z * stride_b;
+    T*       xb = b + hipBlockIdx_z * stride_b;
     copy_matrix_trsm(rows, cols, elem_size, xa, lda, xb, ldb);
 }
-
 
 #endif // \IncludeGuard

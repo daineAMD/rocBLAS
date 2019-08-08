@@ -9,6 +9,7 @@ Definitions:
 
   - &medium_matrix_size_range
     - { M:   192, N:   192, lda:   192, ldb:   192 }
+    - { M:   600, N:   500, lda:   600, ldb:   600 }
     - { M:   800, N:   700, lda:   801, ldb:   701 }
 
   - &large_matrix_size_range
@@ -18,9 +19,9 @@ Definitions:
   - &alpha_range [ 1.0, -5.0 ]
 
   - &testset1_small_matrix_size_range
-    - { M:      256,  N:        256,    lda:    256,    ldb:    256     }
-    - { M:      512,  N:        256,    lda:    256,    ldb:    512     }
-    - { M:      768,  N:        256,    lda:    256,    ldb:    768     }
+    - { M:      256,    N       256,    lda:    256,    ldb:    256     }
+    - { M:      512,    N       256,    lda:    256,    ldb:    512     }
+    - { M:      768,    N       256,    lda:    256,    ldb:    768     }
     - { M:      1024,   N:      256,    lda:    256,    ldb:    1024    }
     - { M:      1280,   N:      256,    lda:    256,    ldb:    1280    }
     - { M:      1536,   N:      256,    lda:    256,    ldb:    1536    }
@@ -37,16 +38,16 @@ Definitions:
 
 
   - &testset2_small_matrix_size_range
-    - { M:      256,    N:      256,    lda:    256,  ldb:      256     }
-    - { M:      256,    N:      512,    lda:    512,  ldb:      256     }
-    - { M:      256,    N:      768,  lda:      768,    ldb:    256     }
+    - { M:      256,    N:      256,    lda:    256,    ldb:    256     }
+    - { M:      256,    N:      512,    lda:    512,    ldb:    256     }
+    - { M:      256,    N:      768,    lda:    768,    ldb:    256     }
     - { M:      256,    N:      1024,   lda:    1024,   ldb:    256     }
     - { M:      256,    N:      1280,   lda:    1280,   ldb:    256     }
     - { M:      256,    N:      1536,   lda:    1536,   ldb:    256     }
     - { M:      256,    N:      1792,   lda:    1792,   ldb:    256     }
     - { M:      256,    N:      2048,   lda:    2048,   ldb:    256     }
     - { M:      384,    N:      384,    lda:    384,    ldb:    384     }
-    - { M:      384,    N:      768,  lda:      768,  ldb:      384     }
+    - { M:      384,    N:      768,    lda:    768,    ldb:    384     }
     - { M:      384,    N:      1152,   lda:    1152,   ldb:    384     }
     - { M:      384,    N:      1536,   lda:    1536,   ldb:    384     }
     - { M:      384,    N:      1920,   lda:    1920,   ldb:    384     }
@@ -101,9 +102,9 @@ Tests:
   diag: [N, U]
   matrix_size: *small_matrix_size_range
   alpha: *alpha_range
-  stride_a: [-1, 1, 5000, 10000]
-  stride_b: [-1, 1, 5000, 10000]
-  batch_count: [1, 2, 3, 5, 20]
+  stride_a: [1, 5000, 10000]
+  stride_b: [1, 5000, 10000]
+  batch_count: [1, 20]
 
 - name: trsm_strided_batched_medium
   category: pre_checkin
@@ -115,8 +116,8 @@ Tests:
   diag: [N, U]
   matrix_size: *medium_matrix_size_range
   alpha: *alpha_range
-  stride_a: [-1, 1, 500000, 1000000]
-  stride_b: [-1, 1, 500000, 1000000]
+  stride_a: [1, 500000, 1000000]
+  stride_b: [1, 500000, 1000000]
   batch_count: [1, 5, 20]
 
 - name: trsm_strided_batched_testset1

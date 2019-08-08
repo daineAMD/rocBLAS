@@ -31,15 +31,15 @@ namespace
     /* ===============copy helper============================================= */
     template <typename T>
     void copy_block_unit(rocblas_handle handle,
-                        rocblas_int    m,
-                        rocblas_int    n,
-                        const T*       src,
-                        rocblas_int    src_ld,
-                        rocblas_int    src_stride,
-                        T*             dst,
-                        rocblas_int    dst_ld,
-                        rocblas_int    dst_stride,
-                        rocblas_int    batch_count)
+                         rocblas_int    m,
+                         rocblas_int    n,
+                         const T*       src,
+                         rocblas_int    src_ld,
+                         rocblas_int    src_stride,
+                         T*             dst,
+                         rocblas_int    dst_ld,
+                         rocblas_int    dst_stride,
+                         rocblas_int    batch_count)
     {
         rocblas_int blocksX = (m - 1) / 128 + 1; // parameters for device kernel
         rocblas_int blocksY = (n - 1) / 8 + 1;
@@ -47,19 +47,19 @@ namespace
         dim3        threads(128, 8);
 
         hipLaunchKernelGGL(copy_matrix_strided_batched_trsm,
-                            grid,
-                            threads,
-                            0,
-                            handle->rocblas_stream,
-                            m,
-                            n,
-                            sizeof(T),
-                            src,
-                            src_ld,
-                            src_stride,
-                            dst,
-                            dst_ld,
-                            dst_stride);
+                           grid,
+                           threads,
+                           0,
+                           handle->rocblas_stream,
+                           m,
+                           n,
+                           sizeof(T),
+                           src,
+                           src_ld,
+                           src_stride,
+                           dst,
+                           dst_ld,
+                           dst_stride);
     }
 
     /* ===============left==================================================== */
@@ -83,7 +83,7 @@ namespace
                                                      T*                X)
     {
         rocblas_int i, jb;
-        rocblas_int stride_X = m*n;
+        rocblas_int stride_X = m * n;
         // transB is always non-transpose
         static constexpr rocblas_operation transB = rocblas_operation_none;
 
@@ -93,8 +93,24 @@ namespace
             {
                 // left, lower no-transpose
                 jb = min(BLOCK, m);
-                rocblas_gemm_strided_batched_template(
-                    handle, transA, transB, jb, n, jb, alpha, invA, BLOCK, stride_invA, B, ldb, stride_B, &zero<T>, X, m, stride_X, batch_count);
+                rocblas_gemm_strided_batched_template(handle,
+                                                      transA,
+                                                      transB,
+                                                      jb,
+                                                      n,
+                                                      jb,
+                                                      alpha,
+                                                      invA,
+                                                      BLOCK,
+                                                      stride_invA,
+                                                      B,
+                                                      ldb,
+                                                      stride_B,
+                                                      &zero<T>,
+                                                      X,
+                                                      m,
+                                                      stride_X,
+                                                      batch_count);
 
                 if(BLOCK < m)
                 {
@@ -140,7 +156,7 @@ namespace
                                                               stride_X,
                                                               batch_count);
                         if(i + BLOCK
-                            >= m) // this condition is not necessary at all and can be changed
+                           >= m) // this condition is not necessary at all and can be changed
                             // as if (i+BLOCK<m)
                             break;
 
@@ -165,7 +181,7 @@ namespace
                     }
                 }
 
-    #if 0
+#if 0
             for( i=0; i < m; i += BLOCK ) {
                 jb = min(m-i, BLOCK);
                 T *tmp = (i == 0) ? alpha : one;
@@ -175,7 +191,7 @@ namespace
                 }
             }
 
-    #endif
+#endif
             }
             else
             {
@@ -364,8 +380,24 @@ namespace
             {
                 // left, upper transpose
                 jb = min(BLOCK, m);
-                rocblas_gemm_strided_batched_template(
-                    handle, transA, transB, jb, n, jb, alpha, invA, BLOCK, stride_invA, B, ldb, stride_B, &zero<T>, X, m, stride_X, batch_count);
+                rocblas_gemm_strided_batched_template(handle,
+                                                      transA,
+                                                      transB,
+                                                      jb,
+                                                      n,
+                                                      jb,
+                                                      alpha,
+                                                      invA,
+                                                      BLOCK,
+                                                      stride_invA,
+                                                      B,
+                                                      ldb,
+                                                      stride_B,
+                                                      &zero<T>,
+                                                      X,
+                                                      m,
+                                                      stride_X,
+                                                      batch_count);
                 if(BLOCK < m)
                 {
                     rocblas_gemm_strided_batched_template(handle,
@@ -458,7 +490,7 @@ namespace
                                                       T*                X)
     {
         rocblas_int i, jb;
-        rocblas_int stride_X = m*n;
+        rocblas_int stride_X = m * n;
 
         // transB is always non-transpose
         static constexpr rocblas_operation transB = rocblas_operation_none;
@@ -557,8 +589,24 @@ namespace
             {
                 // right, upper no-transpose
                 jb = min(BLOCK, n);
-                rocblas_gemm_strided_batched_template(
-                    handle, transB, transA, m, jb, jb, alpha, B, ldb, stride_B, invA, BLOCK, stride_invA, &zero<T>, X, m, stride_X, batch_count);
+                rocblas_gemm_strided_batched_template(handle,
+                                                      transB,
+                                                      transA,
+                                                      m,
+                                                      jb,
+                                                      jb,
+                                                      alpha,
+                                                      B,
+                                                      ldb,
+                                                      stride_B,
+                                                      invA,
+                                                      BLOCK,
+                                                      stride_invA,
+                                                      &zero<T>,
+                                                      X,
+                                                      m,
+                                                      stride_X,
+                                                      batch_count);
                 if(BLOCK < n)
                 {
                     rocblas_gemm_strided_batched_template(handle,
@@ -632,8 +680,24 @@ namespace
             {
                 // right, lower transpose
                 jb = min(BLOCK, n);
-                rocblas_gemm_strided_batched_template(
-                    handle, transB, transA, m, jb, jb, alpha, B, ldb, stride_B, invA, BLOCK, stride_invA, &zero<T>, X, m, stride_X, batch_count);
+                rocblas_gemm_strided_batched_template(handle,
+                                                      transB,
+                                                      transA,
+                                                      m,
+                                                      jb,
+                                                      jb,
+                                                      alpha,
+                                                      B,
+                                                      ldb,
+                                                      stride_B,
+                                                      invA,
+                                                      BLOCK,
+                                                      stride_invA,
+                                                      &zero<T>,
+                                                      X,
+                                                      m,
+                                                      stride_X,
+                                                      batch_count);
                 if(BLOCK < n)
                 {
                     rocblas_gemm_strided_batched_template(handle,
@@ -820,7 +884,7 @@ namespace
         size_t      bsize      = side == rocblas_side_left ? n : m;
         size_t      W          = 1 + (bsize - 1) / B_chunk_size;
         bool        arch_lt906 = handle->device_arch_id() < 906;
-        rocblas_int stride_X   = m*n;
+        rocblas_int stride_X   = m * n;
 
         for(size_t w = 0; w < W; w++)
         {
@@ -837,7 +901,16 @@ namespace
 
                     // copy a BLOCK*n piece we are solving at a time
                     if(!r || arch_lt906)
-                        copy_block_unit(handle, BLOCK, width, Bw + j * BLOCK, ldb, stride_B, x_temp, BLOCK, stride_X, batch_count);
+                        copy_block_unit(handle,
+                                        BLOCK,
+                                        width,
+                                        Bw + j * BLOCK,
+                                        ldb,
+                                        stride_B,
+                                        x_temp,
+                                        BLOCK,
+                                        stride_X,
+                                        batch_count);
 
                     if(r)
                     {
@@ -940,8 +1013,16 @@ namespace
 
                     // copy a m*BLOCK piece we are solving at a time
                     if(!r || arch_lt906)
-                        copy_block_unit(
-                            handle, width, BLOCK, Bw + j * BLOCK * ldb, ldb, stride_B, x_temp, width, stride_X, batch_count);
+                        copy_block_unit(handle,
+                                        width,
+                                        BLOCK,
+                                        Bw + j * BLOCK * ldb,
+                                        ldb,
+                                        stride_B,
+                                        x_temp,
+                                        width,
+                                        stride_X,
+                                        batch_count);
 
                     if(r)
                     {
@@ -1039,7 +1120,6 @@ namespace
     }
 } // \namespace
 
-
 //////////////////////////////
 //////////////////////////////
 //////////////////////////////
@@ -1057,7 +1137,7 @@ rocblas_status rocblas_trsm_batched_template(rocblas_handle    handle,
                                              T*                B[],
                                              rocblas_int       ldb,
                                              rocblas_int       batch_count,
-                                             const T*          supplied_invA[]      = nullptr,
+                                             const T*          supplied_invA[]    = nullptr,
                                              rocblas_int       supplied_invA_size = 0)
 {
     return rocblas_status_not_implemented;
@@ -1065,23 +1145,23 @@ rocblas_status rocblas_trsm_batched_template(rocblas_handle    handle,
 
 template <rocblas_int BLOCK, typename T>
 rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
-                                                    rocblas_side      side,
-                                                    rocblas_fill      uplo,
-                                                    rocblas_operation transA,
-                                                    rocblas_diagonal  diag,
-                                                    rocblas_int       m,
-                                                    rocblas_int       n,
-                                                    const T*          alpha,
-                                                    const T*          A,
-                                                    rocblas_int       lda,
-                                                    rocblas_int       stride_A,
-                                                    T*                B,
-                                                    rocblas_int       ldb,
-                                                    rocblas_int       stride_B,
-                                                    rocblas_int       batch_count,
-                                                    const T*          supplied_invA      = nullptr,
-                                                    rocblas_int       supplied_invA_size = 0,
-                                                    rocblas_int       stride_invA        = 0)
+                                                     rocblas_side      side,
+                                                     rocblas_fill      uplo,
+                                                     rocblas_operation transA,
+                                                     rocblas_diagonal  diag,
+                                                     rocblas_int       m,
+                                                     rocblas_int       n,
+                                                     const T*          alpha,
+                                                     const T*          A,
+                                                     rocblas_int       lda,
+                                                     rocblas_int       stride_A,
+                                                     T*                B,
+                                                     rocblas_int       ldb,
+                                                     rocblas_int       stride_B,
+                                                     rocblas_int       batch_count,
+                                                     const T*          supplied_invA      = nullptr,
+                                                     rocblas_int       supplied_invA_size = 0,
+                                                     rocblas_int       stride_invA        = 0)
 {
     if(batch_count <= 0)
     {
@@ -1114,8 +1194,8 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
     if(supplied_invA && supplied_invA_size / BLOCK < k)
     {
         static int msg = fputs("WARNING: TRSM invA_size argument is too small; invA argument "
-                                "is being ignored; TRSM performance is degraded\n",
-                                stderr);
+                               "is being ignored; TRSM performance is degraded\n",
+                               stderr);
         perf_status    = rocblas_status_perf_degraded;
         supplied_invA  = nullptr;
     }
@@ -1192,8 +1272,8 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
 
         // One-time warning about degraded performance
         static int msg = fputs("WARNING: Device memory allocation size is too small for TRSM; "
-                                "TRSM performance is degraded\n",
-                                stderr);
+                               "TRSM performance is degraded\n",
+                               stderr);
     }
 
     // Get pointers to allocated device memory
@@ -1222,8 +1302,19 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
         auto c_temp = x_temp;
 
         // batched trtri invert diagonal part (BLOCK*BLOCK) of A into invA
-        status = rocblas_trtri_trsm_template<BLOCK>(
-        handle, (T*)c_temp, uplo, diag, k, A, lda, stride_A, (T*)invA, stride_invA, batch_count);
+        //for(int b = 0; b < batch_count; b++)
+        int b  = 0;
+        status = rocblas_trtri_trsm_template<BLOCK>(handle,
+                                                    (T*)c_temp,
+                                                    uplo,
+                                                    diag,
+                                                    k,
+                                                    A + b * stride_A,
+                                                    lda,
+                                                    stride_A,
+                                                    (T*)invA + b * stride_invA,
+                                                    stride_invA,
+                                                    batch_count); //1); //batch_count);
 
         if(status != rocblas_status_success)
             return status;
@@ -1232,48 +1323,50 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
     if(exact_blocks)
     {
         status = special_trsm_strided_batched_template<BLOCK>(handle,
-                                              side,
-                                              uplo,
-                                              transA,
-                                              diag,
-                                              m,
-                                              n,
-                                              &alpha_h,
-                                              A,
-                                              lda,
-                                              stride_A,
-                                              B,
-                                              ldb,
-                                              stride_B,
-                                              batch_count,
-                                              (T*)invA,
-                                              stride_invA,
-                                              B_chunk_size,
-                                              (T*)x_temp);
+                                                              side,
+                                                              uplo,
+                                                              transA,
+                                                              diag,
+                                                              m,
+                                                              n,
+                                                              &alpha_h,
+                                                              A,
+                                                              lda,
+                                                              stride_A,
+                                                              B,
+                                                              ldb,
+                                                              stride_B,
+                                                              batch_count,
+                                                              (T*)invA,
+                                                              stride_invA,
+                                                              B_chunk_size,
+                                                              (T*)x_temp);
     }
     else
     {
-        status = (side == rocblas_side_left ? rocblas_trsm_strided_batched_left<BLOCK, T>
-                                            : rocblas_trsm_strided_batched_right<BLOCK, T>)(handle,
-                                                                            uplo,
-                                                                            transA,
-                                                                            m,
-                                                                            n,
-                                                                            &alpha_h,
-                                                                            A,
-                                                                            lda,
-                                                                            stride_A,
-                                                                            B,
-                                                                            ldb,
-                                                                            stride_B,
-                                                                            batch_count,
-                                                                            (T*)invA,
-                                                                            stride_invA,
-                                                                            (T*)x_temp);
+        status = (side == rocblas_side_left
+                      ? rocblas_trsm_strided_batched_left<BLOCK, T>
+                      : rocblas_trsm_strided_batched_right<BLOCK, T>)(handle,
+                                                                      uplo,
+                                                                      transA,
+                                                                      m,
+                                                                      n,
+                                                                      &alpha_h,
+                                                                      A,
+                                                                      lda,
+                                                                      stride_A,
+                                                                      B,
+                                                                      ldb,
+                                                                      stride_B,
+                                                                      batch_count,
+                                                                      (T*)invA,
+                                                                      stride_invA,
+                                                                      (T*)x_temp);
         // Copy solution to B
 
         if(status == rocblas_status_success)
-            copy_block_unit(handle, m, n, (const T*)x_temp, m, (m*n), (T*)B, ldb, stride_B, batch_count);
+            copy_block_unit(
+                handle, m, n, (const T*)x_temp, m, (m * n), (T*)B, ldb, stride_B, batch_count);
     }
 
     // If status is successful, return perf_status; else return error

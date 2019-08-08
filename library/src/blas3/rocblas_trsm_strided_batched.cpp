@@ -50,7 +50,7 @@ namespace
                                                         rocblas_int       ldb,
                                                         rocblas_int       stride_B,
                                                         rocblas_int       batch_count,
-                                                        const T*          supplied_invA      = nullptr,
+                                                        const T*          supplied_invA = nullptr,
                                                         rocblas_int       supplied_invA_size = 0,
                                                         rocblas_int       stride_invA        = 0)
     {
@@ -202,7 +202,24 @@ namespace
             return handle->is_device_memory_size_query() ? rocblas_status_size_unchanged
                                                          : rocblas_status_success;
 
-        return rocblas_trsm_strided_batched_template<BLOCK, T>(handle, side, uplo, transA, diag, m, n, alpha, A, lda, stride_A, B, ldb, stride_B, batch_count, supplied_invA, supplied_invA_size, stride_invA);
+        return rocblas_trsm_strided_batched_template<BLOCK, T>(handle,
+                                                               side,
+                                                               uplo,
+                                                               transA,
+                                                               diag,
+                                                               m,
+                                                               n,
+                                                               alpha,
+                                                               A,
+                                                               lda,
+                                                               stride_A,
+                                                               B,
+                                                               ldb,
+                                                               stride_B,
+                                                               batch_count,
+                                                               supplied_invA,
+                                                               supplied_invA_size,
+                                                               stride_invA);
     }
 
 } // namespace
@@ -233,8 +250,21 @@ rocblas_status rocblas_strsm_strided_batched(rocblas_handle    handle,
                                              rocblas_int       stride_B,
                                              rocblas_int       batch_count)
 {
-    return rocblas_trsm_strided_batched_ex_impl<STRSM_BLOCK>(
-        handle, side, uplo, transA, diag, m, n, alpha, A, lda, stride_A, B, ldb, stride_B, batch_count);
+    return rocblas_trsm_strided_batched_ex_impl<STRSM_BLOCK>(handle,
+                                                             side,
+                                                             uplo,
+                                                             transA,
+                                                             diag,
+                                                             m,
+                                                             n,
+                                                             alpha,
+                                                             A,
+                                                             lda,
+                                                             stride_A,
+                                                             B,
+                                                             ldb,
+                                                             stride_B,
+                                                             batch_count);
 }
 
 rocblas_status rocblas_dtrsm_strided_batched(rocblas_handle    handle,
@@ -253,8 +283,21 @@ rocblas_status rocblas_dtrsm_strided_batched(rocblas_handle    handle,
                                              rocblas_int       stride_B,
                                              rocblas_int       batch_count)
 {
-    return rocblas_trsm_strided_batched_ex_impl<DTRSM_BLOCK>(
-        handle, side, uplo, transA, diag, m, n, alpha, A, lda, stride_A, B, ldb, stride_B, batch_count);
+    return rocblas_trsm_strided_batched_ex_impl<DTRSM_BLOCK>(handle,
+                                                             side,
+                                                             uplo,
+                                                             transA,
+                                                             diag,
+                                                             m,
+                                                             n,
+                                                             alpha,
+                                                             A,
+                                                             lda,
+                                                             stride_A,
+                                                             B,
+                                                             ldb,
+                                                             stride_B,
+                                                             batch_count);
 }
 
 rocblas_status rocblas_trsm_strided_batched_ex(rocblas_handle    handle,
@@ -280,41 +323,41 @@ rocblas_status rocblas_trsm_strided_batched_ex(rocblas_handle    handle,
     {
     case rocblas_datatype_f64_r:
         return rocblas_trsm_strided_batched_ex_impl<DTRSM_BLOCK>(handle,
-                                                 side,
-                                                 uplo,
-                                                 transA,
-                                                 diag,
-                                                 m,
-                                                 n,
-                                                 static_cast<const double*>(alpha),
-                                                 static_cast<const double*>(A),
-                                                 lda,
-                                                 stride_A,
-                                                 static_cast<double*>(B),
-                                                 ldb,
-                                                 stride_B,
-                                                 batch_count,
-                                                 static_cast<const double*>(invA),
-                                                 invA_size);
+                                                                 side,
+                                                                 uplo,
+                                                                 transA,
+                                                                 diag,
+                                                                 m,
+                                                                 n,
+                                                                 static_cast<const double*>(alpha),
+                                                                 static_cast<const double*>(A),
+                                                                 lda,
+                                                                 stride_A,
+                                                                 static_cast<double*>(B),
+                                                                 ldb,
+                                                                 stride_B,
+                                                                 batch_count,
+                                                                 static_cast<const double*>(invA),
+                                                                 invA_size);
 
     case rocblas_datatype_f32_r:
         return rocblas_trsm_strided_batched_ex_impl<STRSM_BLOCK>(handle,
-                                                 side,
-                                                 uplo,
-                                                 transA,
-                                                 diag,
-                                                 m,
-                                                 n,
-                                                 static_cast<const float*>(alpha),
-                                                 static_cast<const float*>(A),
-                                                 lda,
-                                                 stride_A,
-                                                 static_cast<float*>(B),
-                                                 ldb,
-                                                 stride_B,
-                                                 batch_count,
-                                                 static_cast<const float*>(invA),
-                                                 invA_size);
+                                                                 side,
+                                                                 uplo,
+                                                                 transA,
+                                                                 diag,
+                                                                 m,
+                                                                 n,
+                                                                 static_cast<const float*>(alpha),
+                                                                 static_cast<const float*>(A),
+                                                                 lda,
+                                                                 stride_A,
+                                                                 static_cast<float*>(B),
+                                                                 ldb,
+                                                                 stride_B,
+                                                                 batch_count,
+                                                                 static_cast<const float*>(invA),
+                                                                 invA_size);
 
     default:
         return rocblas_status_not_implemented;

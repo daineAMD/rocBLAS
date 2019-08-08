@@ -108,8 +108,21 @@ namespace
             if(!C_tmp)
                 return rocblas_status_memory_error;
 
-            status = rocblas_trtri_large_batched<NB>(
-                handle, uplo, diag, n, A, lda, 0, bsa, invA, ldinvA, 0, bsinvA, 1, batch_count, (T*)C_tmp);
+            status = rocblas_trtri_large_batched<NB>(handle,
+                                                     uplo,
+                                                     diag,
+                                                     n,
+                                                     A,
+                                                     lda,
+                                                     0,
+                                                     bsa,
+                                                     invA,
+                                                     ldinvA,
+                                                     0,
+                                                     bsinvA,
+                                                     1,
+                                                     batch_count,
+                                                     (T*)C_tmp);
         }
 
         return status;

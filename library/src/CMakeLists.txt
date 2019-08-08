@@ -77,7 +77,6 @@ if( BUILD_WITH_TENSILE )
   set( Tensile_SRC
     blas3/Tensile/gemm.cpp
     blas3/rocblas_trsm.cpp
-    blas3/rocblas_trsm_batched.cpp
     blas3/rocblas_trsm_strided_batched.cpp
   )
 

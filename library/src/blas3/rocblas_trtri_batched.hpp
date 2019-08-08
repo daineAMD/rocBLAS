@@ -17,12 +17,12 @@ constexpr size_t num_non_tri_elements(size_t n)
 
 template <rocblas_int IB, typename T>
 __device__ void custom_trtri_device(rocblas_fill     uplo,
-                                                    rocblas_diagonal diag,
-                                                    rocblas_int      n,
-                                                    const T*         A,
-                                                    rocblas_int      lda,
-                                                    T*               invA,
-                                                    rocblas_int      ldinvA)
+                                    rocblas_diagonal diag,
+                                    rocblas_int      n,
+                                    const T*         A,
+                                    rocblas_int      lda,
+                                    T*               invA,
+                                    rocblas_int      ldinvA)
 {
     // quick return
     if(n <= 0)
@@ -202,8 +202,13 @@ __device__ void custom_trtri_device(rocblas_fill     uplo,
 }
 
 template <typename T>
-__device__ void rocblas_tritri_batched_fill_upper(
-    size_t offset, size_t idx, rocblas_int n, rocblas_int lda, rocblas_int sub_stride_A, T value, T* A)
+__device__ void rocblas_tritri_batched_fill_upper(size_t      offset,
+                                                  size_t      idx,
+                                                  rocblas_int n,
+                                                  rocblas_int lda,
+                                                  rocblas_int sub_stride_A,
+                                                  T           value,
+                                                  T*          A)
 {
     rocblas_int row = n - 2 - floor(sqrt(-8 * idx + 4 * n * (n - 1) - 7) / 2.0 - 0.5);
     rocblas_int col = idx + row + 1 - n * (n - 1) / 2 + (n - row) * (n - row - 1) / 2;
@@ -248,9 +253,11 @@ __global__ void rocblas_trtri_batched_fill(rocblas_handle handle,
         size_t idx = tx % num_zero_elem;
 
         if(uplo == rocblas_fill_upper)
-            rocblas_tritri_batched_fill_lower(offset, idx, lda, sub_stride_A, T(0), A + hipBlockIdx_y * stride_A);
+            rocblas_tritri_batched_fill_lower(
+                offset, idx, lda, sub_stride_A, T(0), A + hipBlockIdx_y * stride_A);
         else if(uplo == rocblas_fill_lower)
-            rocblas_tritri_batched_fill_upper(offset, idx, n, lda, sub_stride_A, T(0), A + hipBlockIdx_y * stride_A);
+            rocblas_tritri_batched_fill_upper(
+                offset, idx, n, lda, sub_stride_A, T(0), A + hipBlockIdx_y * stride_A);
 
         tx += hipBlockDim_x * hipGridDim_x;
     }
@@ -482,9 +489,9 @@ __global__ void trtri_diagonal_kernel_batched(rocblas_fill     uplo,
 
     // each hip thread Block compute a inverse of a IB * IB diagonal block of A
 
-    rocblas_int tiles = n / IB / 2;
-    const T*    individual_A
-        = A + (IB * 2 * lda + IB * 2) * (hipBlockIdx_x % tiles) + sub_stride_A * (hipBlockIdx_x / tiles) + hipBlockIdx_y * stride_A;
+    rocblas_int tiles        = n / IB / 2;
+    const T*    individual_A = A + (IB * 2 * lda + IB * 2) * (hipBlockIdx_x % tiles)
+                            + sub_stride_A * (hipBlockIdx_x / tiles) + hipBlockIdx_y * stride_A;
     T* individual_invA = invA + (IB * 2 * ldinvA + IB * 2) * (hipBlockIdx_x % tiles)
                          + sub_stride_invA * (hipBlockIdx_x / tiles) + hipBlockIdx_y * stride_invA;
 
@@ -514,6 +521,7 @@ rocblas_status trtri_strided_gemm_block(rocblas_handle handle,
                                         rocblas_int    sub_stride_invA,
                                         T*             C,
                                         rocblas_int    ld_C,
+                                        rocblas_int    stride_C,
                                         rocblas_int    sub_stride_C,
                                         rocblas_int    batch_count,
                                         rocblas_int    sub_blocks)
@@ -523,9 +531,6 @@ rocblas_status trtri_strided_gemm_block(rocblas_handle handle,
     static constexpr T zero         = 0;
     static constexpr T negative_one = -1;
 
-#ifndef NDEBUG
-    printf("first batched gemm\n");
-#endif
     // first batched gemm compute C = A21*invA11 (lower) or C = A12*invA22 (upper)
     // distance between each invA11 or invA22 is sub_stride_invA,  sub_stride_A for each A21 or A12, C
     // of size IB * IB
@@ -538,27 +543,20 @@ rocblas_status trtri_strided_gemm_block(rocblas_handle handle,
                                                        N,
                                                        N,
                                                        &one,
-                                                       (const T*)A + b * stride_A,
+                                                       (const T*)(A + b * stride_A),
                                                        ld_A,
                                                        sub_stride_A,
-                                                       (const T*)invAg1 + b * stride_invA,
+                                                       (const T*)(invAg1 + b * stride_invA),
                                                        ld_invA,
                                                        sub_stride_invA,
                                                        &zero,
-                                                       (T*)C,
+                                                       (T*)C + b * stride_C,
                                                        ld_C,
                                                        sub_stride_C,
                                                        sub_blocks);
-    }
-    
 
-#ifndef NDEBUG
-    printf("second batched gemm\n");
-#endif
-    // second batched gemm compute  invA21 = -invA22 * C (lower) or invA12 = -invA11*C (upper)
-    // distance between each invA21 or invA12 is stride_invA,
-    for(int b = 0; b < batch_count; b++)
-    {
+        // second batched gemm compute  invA21 = -invA22 * C (lower) or invA12 = -invA11*C (upper)
+        // distance between each invA21 or invA12 is stride_invA,
         status = rocblas_gemm_strided_batched_template(handle,
                                                        rocblas_operation_none,
                                                        rocblas_operation_none,
@@ -566,14 +564,14 @@ rocblas_status trtri_strided_gemm_block(rocblas_handle handle,
                                                        N,
                                                        M,
                                                        &negative_one,
-                                                       (const T*)invAg2a,
+                                                       (const T*)(invAg2a + b * stride_invA),
                                                        ld_invA,
                                                        sub_stride_invA,
-                                                       (const T*)C,
+                                                       (const T*)C + b * stride_C,
                                                        ld_C,
                                                        sub_stride_C,
                                                        &zero,
-                                                       (T*)invAg2c,
+                                                       (T*)(invAg2c + b * stride_invA),
                                                        ld_invA,
                                                        sub_stride_invA,
                                                        sub_blocks);
@@ -710,6 +708,7 @@ rocblas_status rocblas_trtri_large_batched(rocblas_handle   handle,
                                 ? (n - current_n) * ldinvA + i * sub_stride_invA
                                 : (n - current_n * tiles_per_batch) + i * sub_stride_invA)),
                     ldinvA,
+                    stride_invA,
                     current_n,
                     batch_count,
                     tiles_per_batch);
@@ -719,30 +718,30 @@ rocblas_status rocblas_trtri_large_batched(rocblas_handle   handle,
         {
             for(int i = 0; i < tiles_per_batch; i++)
             {
-                rocblas_int stride_A, stride_invA;
-                stride_A    = (2 * current_n * lda + 2 * current_n);
-                stride_invA = (2 * current_n * ldinvA + 2 * current_n);
+                sub_stride_A    = (2 * current_n * lda + 2 * current_n);
+                sub_stride_invA = (2 * current_n * ldinvA + 2 * current_n);
+
                 trtri_strided_gemm_block(
                     handle,
                     current_n,
                     current_n,
                     (const T*)(A
-                               + (uplo == rocblas_fill_lower ? current_n + i * stride_A
-                                                             : current_n * lda + i * stride_A)),
+                               + (uplo == rocblas_fill_lower ? current_n + i * sub_stride_A
+                                                             : current_n * lda + i * sub_stride_A)),
                     lda,
                     stride_A,
                     sub_stride_A,
                     (const T*)(invA
                                + (uplo == rocblas_fill_lower
-                                      ? 0 + i * stride_invA
-                                      : current_n * ldinvA + current_n + i * stride_invA)),
+                                      ? 0 + i * sub_stride_invA
+                                      : current_n * ldinvA + current_n + i * sub_stride_invA)),
                     (const T*)(invA
                                + (uplo == rocblas_fill_lower
-                                      ? current_n * ldinvA + current_n + i * stride_invA
-                                      : 0 + i * stride_invA)),
+                                      ? current_n * ldinvA + current_n + i * sub_stride_invA
+                                      : 0 + i * sub_stride_invA)),
                     (T*)(invA
-                         + (uplo == rocblas_fill_lower ? current_n + i * stride_invA
-                                                       : current_n * ldinvA + i * stride_invA)),
+                         + (uplo == rocblas_fill_lower ? current_n + i * sub_stride_invA
+                                                       : current_n * ldinvA + i * sub_stride_invA)),
                     ldinvA,
                     stride_invA,
                     sub_stride_invA,
@@ -751,6 +750,7 @@ rocblas_status rocblas_trtri_large_batched(rocblas_handle   handle,
                                 ? (n - current_n) * ldinvA + i * current_n
                                 : (n - current_n * tiles_per_batch) + i * current_n)),
                     ldinvA,
+                    stride_invA,
                     sub_stride_invA,
                     batch_count,
                     sub_batch_count);
@@ -798,6 +798,7 @@ rocblas_status rocblas_trtri_large_batched(rocblas_handle   handle,
                 sub_stride_invA,
                 C_tmp,
                 uplo == rocblas_fill_lower ? remainder : current_n,
+                0,
                 remainder * current_n,
                 batch_count,
                 sub_batch_count);
@@ -806,7 +807,6 @@ rocblas_status rocblas_trtri_large_batched(rocblas_handle   handle,
         if(oddRemainder > 0) // solve small oddRemainder
         {
             current_n = n - oddRemainder;
-
             trtri_strided_gemm_block(
                 handle,
                 uplo == rocblas_fill_lower ? oddRemainder : current_n,
@@ -825,6 +825,7 @@ rocblas_status rocblas_trtri_large_batched(rocblas_handle   handle,
                 sub_stride_invA,
                 C_tmp,
                 uplo == rocblas_fill_lower ? oddRemainder : current_n,
+                0,
                 oddRemainder * current_n,
                 batch_count,
                 sub_batch_count);
@@ -866,17 +867,46 @@ rocblas_status rocblas_trtri_batched_template(rocblas_handle   handle,
                                               rocblas_int      stride_invA,
                                               rocblas_int      sub_stride_invA,
                                               rocblas_int      batch_count,
-                                              rocblas_int      sub_batch_count, //batch_count,
+                                              rocblas_int      sub_batch_count,
                                               T*               C_tmp)
 {
     if(!n || !sub_batch_count)
         return rocblas_status_success;
     if(n <= NB)
-        return rocblas_trtri_small_batched<NB>(
-            handle, uplo, diag, n, A, lda, stride_A, sub_stride_A, invA, ldinvA, stride_invA, sub_stride_invA, batch_count, sub_batch_count);
+    {
+        return rocblas_trtri_small_batched<NB>(handle,
+                                               uplo,
+                                               diag,
+                                               n,
+                                               A,
+                                               lda,
+                                               stride_A,
+                                               sub_stride_A,
+                                               invA,
+                                               ldinvA,
+                                               stride_invA,
+                                               sub_stride_invA,
+                                               batch_count,
+                                               sub_batch_count);
+    }
     else
-        return rocblas_trtri_large_batched<NB>(
-            handle, uplo, diag, n, A, lda, stride_A, sub_stride_A, invA, ldinvA, stride_invA, sub_stride_invA, batch_count,  sub_batch_count, C_tmp);
+    {
+        return rocblas_trtri_large_batched<NB>(handle,
+                                               uplo,
+                                               diag,
+                                               n,
+                                               A,
+                                               lda,
+                                               stride_A,
+                                               sub_stride_A,
+                                               invA,
+                                               ldinvA,
+                                               stride_invA,
+                                               sub_stride_invA,
+                                               batch_count,
+                                               sub_batch_count,
+                                               C_tmp);
+    }
 }
 
 #endif // _ROCBLAS_TRTRI_BATCHED_HPP_

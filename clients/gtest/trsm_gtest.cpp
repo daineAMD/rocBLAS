@@ -37,13 +37,12 @@ namespace
         {
             switch(TRSM_TYPE)
             {
-                case TRSM:
-                    return !strcmp(arg.function, "trsm");
-                case TRSM_STRIDED_BATCHED:
-                    return !strcmp(arg.function, "trsm_strided_batched");
+            case TRSM:
+                return !strcmp(arg.function, "trsm");
+            case TRSM_STRIDED_BATCHED:
+                return !strcmp(arg.function, "trsm_strided_batched");
             }
             return false;
-            
         }
 
         // Google Test name suffix based on parameters
@@ -53,8 +52,8 @@ namespace
 
             name << rocblas_datatype2string(arg.a_type) << '_' << (char)std::toupper(arg.side)
                  << (char)std::toupper(arg.uplo) << (char)std::toupper(arg.transA)
-                 << (char)std::toupper(arg.diag) << '_' << arg.M << '_' << arg.N << '_'
-                 << arg.alpha << '_' << arg.lda << '_';
+                 << (char)std::toupper(arg.diag) << '_' << arg.M << '_' << arg.N << '_' << arg.alpha
+                 << '_' << arg.lda << '_';
 
             if(TRSM_TYPE == TRSM_STRIDED_BATCHED)
                 name << arg.stride_a << '_';
@@ -67,7 +66,6 @@ namespace
             return std::move(name);
         }
     };
-
 
     // By default, this test does not apply to any types.
     // The unnamed second parameter is used for enable_if below.
