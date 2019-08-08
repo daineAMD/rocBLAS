@@ -9,6 +9,8 @@
 #include "testing_dot.hpp"
 #include "testing_iamax_iamin.hpp"
 #include "testing_nrm2.hpp"
+#include "testing_nrm2_batched.hpp"
+#include "testing_nrm2_strided_batched.hpp"
 #include "testing_scal.hpp"
 #include "testing_swap.hpp"
 #include "type_dispatch.hpp"
@@ -19,6 +21,8 @@ namespace
     enum class blas1
     {
         nrm2,
+        nrm2_batched,
+        nrm2_strided_batched,
         asum,
         iamax,
         iamin,
@@ -65,6 +69,12 @@ namespace
                || BLAS1 == blas1::swap)
                 name << '_' << arg.incy;
 
+            if(BLAS1 == blas1::nrm2_strided_batched)
+                name << '_' << arg.stride_x;
+
+            if(BLAS1 == blas1::nrm2_batched || BLAS1 == blas1::nrm2_strided_batched)
+                name << '_' << arg.batch_count;
+
             return std::move(name);
         }
     };
@@ -91,7 +101,8 @@ namespace
                 && (std::is_same<Ti, rocblas_float_complex>{}
                     || std::is_same<Ti, rocblas_double_complex>{}))
 
-            || (BLAS1 == blas1::nrm2 && std::is_same<Ti, To>{} && std::is_same<To, Tc>{}
+            || ((BLAS1 == blas1::nrm2 || BLAS1 == blas1::nrm2_batched || BLAS1 == blas1::nrm2_strided_batched)
+                && std::is_same<Ti, To>{} && std::is_same<To, Tc>{}
                 && (std::is_same<Ti, rocblas_float_complex>{}
                     || std::is_same<Ti, rocblas_double_complex>{} || std::is_same<Ti, float>{}
                     || std::is_same<Ti, double>{}))
@@ -176,6 +187,8 @@ INSTANTIATE_TEST_CATEGORIES(NAME)
 
 BLAS1_TESTING(asum,  ARG1)
 BLAS1_TESTING(nrm2,  ARG1)
+BLAS1_TESTING(nrm2_batched,  ARG1)
+BLAS1_TESTING(nrm2_strided_batched,  ARG1)
 BLAS1_TESTING(iamax, ARG1)
 BLAS1_TESTING(iamin, ARG1)
 BLAS1_TESTING(axpy,  ARG1)
