@@ -8,6 +8,8 @@
 #include "rocblas_datatype2string.hpp"
 #include "rocblas_parse_data.hpp"
 #include "testing_asum.hpp"
+#include "testing_asum_batched.hpp"
+#include "testing_asum_strided_batched.hpp"
 #include "testing_axpy.hpp"
 #include "testing_copy.hpp"
 #include "testing_dot.hpp"
@@ -202,6 +204,10 @@ struct perf_blas<T,
     {
         if(!strcmp(arg.function, "asum"))
             testing_asum<T>(arg);
+        else if(!strcmp(arg.function, "asum_batched"))
+            testing_asum_batched<T>(arg);
+        else if(!strcmp(arg.function, "asum_strided_batched"))
+            testing_asum_strided_batched<T>(arg);
         else if(!strcmp(arg.function, "axpy"))
             testing_axpy<T>(arg);
         else if(!strcmp(arg.function, "copy"))
