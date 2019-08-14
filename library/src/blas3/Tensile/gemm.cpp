@@ -680,7 +680,7 @@ rocblas_status rocblas_gemm_batched_impl(rocblas_handle    handle,
 
             if(layer_mode & rocblas_layer_mode_log_bench)
                 log_bench(handle,
-                          "./rocblas-bench -f gemm -r",
+                          "./rocblas-bench -f gemm_batched -r",
                           rocblas_precision_string<T>,
                           "--transposeA",
                           trans_a_letter,
@@ -758,6 +758,7 @@ rocblas_status rocblas_gemm_batched_impl(rocblas_handle    handle,
     rocblas_int stride_a;
     rocblas_int stride_b;
     rocblas_int stride_c;
+
     infer_batch_strides(trans_a, trans_b, m, n, k, ld_a,
                         &stride_a, ld_b, &stride_b, ld_c, &stride_c);
 

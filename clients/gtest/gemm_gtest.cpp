@@ -63,7 +63,7 @@ namespace
                 return !strcmp(arg.function, "gemm_ex") || !strcmp(arg.function, "gemm_ex_bad_arg");
 
             case GEMM_BATCHED:
-                return !strcmp(arg.function, "gemm_strided_batched");
+                return !strcmp(arg.function, "gemm_batched");
 
             case GEMM_STRIDED_BATCHED:
                 return !strcmp(arg.function, "gemm_strided_batched");
