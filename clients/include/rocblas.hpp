@@ -475,6 +475,33 @@ static constexpr auto rocblas_gemm<float> = rocblas_sgemm;
 template <>
 static constexpr auto rocblas_gemm<double> = rocblas_dgemm;
 
+// gemm_batched
+template <typename T>
+rocblas_status (*rocblas_gemm_batched)(rocblas_handle    handle,
+                                       rocblas_operation transA,
+                                       rocblas_operation transB,
+                                       rocblas_int       m,
+                                       rocblas_int       n,
+                                       rocblas_int       k,
+                                       const T*          alpha,
+                                       const T* const    A[],
+                                       rocblas_int       lda,
+                                       const T* const    B[],
+                                       rocblas_int       ldb,
+                                       const T*          beta,
+                                       T*                C[],
+                                       rocblas_int       ldc,
+                                       rocblas_int       batch_count);
+
+template <>
+static constexpr auto rocblas_gemm_batched<rocblas_half> = rocblas_hgemm_batched;
+
+template <>
+static constexpr auto rocblas_gemm_batched<float> = rocblas_sgemm_batched;
+
+template <>
+static constexpr auto rocblas_gemm_batched<double> = rocblas_dgemm_batched;
+
 // gemm_strided_batched
 template <typename T>
 rocblas_status (*rocblas_gemm_strided_batched)(rocblas_handle    handle,

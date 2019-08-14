@@ -611,6 +611,196 @@ rocblas_status rocblas_gemm_strided_batched_impl(rocblas_handle    handle,
     // clang-format on
 }
 
+template <typename>
+static constexpr char rocblas_gemm_batched_name[] = "unknown";
+template <>
+static constexpr char rocblas_gemm_batched_name<rocblas_half>[] = "rocblas_hgemm_batched";
+template <>
+static constexpr char rocblas_gemm_batched_name<float>[] = "rocblas_sgemm_batched";
+template <>
+static constexpr char rocblas_gemm_batched_name<double>[] = "rocblas_dgemm_batched";
+
+/*******************************************************************************
+ * Batched GEMM implementation
+ ******************************************************************************/
+template <typename T>
+rocblas_status rocblas_gemm_batched_impl(rocblas_handle    handle,
+                                         rocblas_operation trans_a,
+                                         rocblas_operation trans_b,
+                                         rocblas_int       m,
+                                         rocblas_int       n,
+                                         rocblas_int       k,
+                                         const T*          alpha,
+                                         const T* const    A[],
+                                         rocblas_int       ld_a,
+                                         const T* const    B[],
+                                         rocblas_int       ld_b,
+                                         const T*          beta,
+                                         T* const          C[],
+                                         rocblas_int       ld_c,
+                                         rocblas_int       b_c)
+{
+    // return rocblas_status_not_implemented;
+
+    // clang-format off
+    // Perform logging
+    if(!handle)
+        return rocblas_status_invalid_handle;
+    RETURN_ZERO_DEVICE_MEMORY_SIZE_IF_QUERIED(handle);
+
+    if(!alpha || !beta)
+        return rocblas_status_invalid_pointer;
+
+    auto layer_mode = handle->layer_mode;
+    if(layer_mode & (rocblas_layer_mode_log_trace | rocblas_layer_mode_log_bench |
+                     rocblas_layer_mode_log_profile))
+    {
+        auto trans_a_letter = rocblas_transpose_letter(trans_a);
+        auto trans_b_letter = rocblas_transpose_letter(trans_b);
+
+        if(handle->pointer_mode == rocblas_pointer_mode_host)
+        {
+            if(layer_mode & rocblas_layer_mode_log_trace)
+                log_trace(handle,
+                          rocblas_gemm_batched_name<T>,
+                          trans_a,
+                          trans_b,
+                          m,
+                          n,
+                          k,
+                          *alpha,
+                          A,
+                          ld_a,
+                          B,
+                          ld_b,
+                          *beta,
+                          C,
+                          ld_c,
+                          b_c);
+
+            if(layer_mode & rocblas_layer_mode_log_bench)
+                log_bench(handle,
+                          "./rocblas-bench -f gemm -r",
+                          rocblas_precision_string<T>,
+                          "--transposeA",
+                          trans_a_letter,
+                          "--transposeB",
+                          trans_b_letter,
+                          "-m",
+                          m,
+                          "-n",
+                          n,
+                          "-k",
+                          k,
+                          "--alpha",
+                          *alpha,
+                          "--lda",
+                          ld_a,
+                          "--ldb",
+                          ld_b,
+                          "--beta",
+                          *beta,
+                          "--ldc",
+                          ld_c,
+                          "--batch",
+                          b_c);
+        }
+        else
+        {
+            if(layer_mode & rocblas_layer_mode_log_trace)
+                log_trace(handle,
+                          rocblas_gemm_batched_name<T>,
+                          trans_a,
+                          trans_b,
+                          m,
+                          n,
+                          k,
+                          alpha,
+                          A,
+                          ld_a,
+                          B,
+                          ld_b,
+                          beta,
+                          C,
+                          ld_c,
+                          b_c);
+        }
+
+        if(layer_mode & rocblas_layer_mode_log_profile)
+            log_profile(handle,
+                        rocblas_gemm_batched_name<T>,
+                        "transA",
+                        trans_a_letter,
+                        "transB",
+                        trans_b_letter,
+                        "M",
+                        m,
+                        "N",
+                        n,
+                        "K",
+                        k,
+                        "lda",
+                        ld_a,
+                        "ldb",
+                        ld_b,
+                        "ldc",
+                        ld_c,
+                        "batch",
+                        b_c);
+    }
+
+    if(m == 0 || n == 0 || k == 0 || b_c == 0)
+    {
+        return rocblas_status_success;
+    }
+
+    // TODO: ???
+    rocblas_int stride_a;
+    rocblas_int stride_b;
+    rocblas_int stride_c;
+    infer_batch_strides(trans_a, trans_b, m, n, k, ld_a,
+                        &stride_a, ld_b, &stride_b, ld_c, &stride_c);
+
+    rocblas_status validArgs = validateArgs(handle, trans_a, trans_b,
+                                            m, n, k, alpha,
+                                            A, ld_a,
+                                            B, ld_b, beta,
+                                            C, ld_c, b_c);
+
+    if(validArgs != rocblas_status_success)
+        return validArgs;
+
+    unsigned int strideC1 = static_cast<unsigned int>(ld_c);
+    unsigned int strideC2 = static_cast<unsigned int>(stride_c);
+    unsigned int strideA1 = static_cast<unsigned int>(ld_a);
+    unsigned int strideA2 = static_cast<unsigned int>(stride_a);
+    unsigned int strideB1 = static_cast<unsigned int>(ld_b);
+    unsigned int strideB2 = static_cast<unsigned int>(stride_b);
+    unsigned int sizeI    = static_cast<unsigned int>(m);
+    unsigned int sizeJ    = static_cast<unsigned int>(n);
+    unsigned int sizeK    = 1; //b_c;
+    unsigned int sizeL    = static_cast<unsigned int>(k);
+
+    hipError_t status;
+    for(int i = 0; i < b_c; i++)
+    {
+        status = callTensile<T>(alpha, beta, A[i], B[i], C[i],
+                                trans_a, trans_b,
+                                strideC1, strideC2,
+                                strideA1, strideA2,
+                                strideB1, strideB2,
+                                sizeI, sizeJ, sizeK, sizeL,
+                                handle);
+
+        if(get_rocblas_status_for_hip_status(status) != rocblas_status_success)
+            break;
+    }
+
+    // clang-format on
+
+    return get_rocblas_status_for_hip_status(status);
+}
+
 /*******************************************************************************
  * Batched / Strided GEMM Kernel name implementation
  ******************************************************************************/
@@ -791,6 +981,29 @@ rocblas_status rocblas_gemm_kernel_name_impl(rocblas_handle    handle,
 }
 
 /*******************************************************************************
+ * Batched GEMM Kernel name implementation
+ ******************************************************************************/
+template <typename T>
+rocblas_status rocblas_gemm_kernel_name_impl(rocblas_handle    handle,
+                                             rocblas_operation trans_a,
+                                             rocblas_operation trans_b,
+                                             rocblas_int       m,
+                                             rocblas_int       n,
+                                             rocblas_int       k,
+                                             const T*          alpha,
+                                             const T*          A[],
+                                             rocblas_int       ld_a,
+                                             const T*          B[],
+                                             rocblas_int       ld_b,
+                                             const T*          beta,
+                                             T*                C[],
+                                             rocblas_int       ld_c,
+                                             rocblas_int       b_c)
+{
+    return rocblas_status_not_implemented;
+}
+
+/*******************************************************************************
  * GEMM APIs
  ******************************************************************************/
 rocblas_status rocblas_hgemm(rocblas_handle handle,
@@ -855,7 +1068,7 @@ rocblas_status rocblas_dgemm(rocblas_handle handle,
 
 
 /*******************************************************************************
- * Batched / Strided GEMM APIs
+ * Strided_Batched GEMM APIs
  ******************************************************************************/
 
 rocblas_status rocblas_hgemm_strided_batched(rocblas_handle handle,
@@ -943,6 +1156,88 @@ rocblas_status rocblas_dgemm_strided_batched(rocblas_handle handle,
         B, ld_b, stride_b,
         beta,
         C, ld_c, stride_c, b_c);
+}
+
+/*******************************************************************************
+ * Batched GEMM APIs
+ ******************************************************************************/
+
+rocblas_status rocblas_hgemm_batched(rocblas_handle handle,
+                                     rocblas_operation trans_a,
+                                     rocblas_operation trans_b,
+                                     rocblas_int m,
+                                     rocblas_int n,
+                                     rocblas_int k,
+                                     const rocblas_half* alpha,
+                                     const rocblas_half* const A[],
+                                     rocblas_int ld_a,
+                                     const rocblas_half* const B[],
+                                     rocblas_int ld_b,
+                                     const rocblas_half *beta,
+                                     rocblas_half* const C[],
+                                     rocblas_int ld_c,
+                                     rocblas_int b_c)
+{
+    return rocblas_gemm_batched_impl<rocblas_half>(
+        handle, trans_a, trans_b,
+        m, n, k,
+        alpha,
+        A, ld_a,
+        B, ld_b,
+        beta,
+        C, ld_c, b_c);
+}
+
+rocblas_status rocblas_sgemm_batched(rocblas_handle handle,
+                                     rocblas_operation trans_a,
+                                     rocblas_operation trans_b,
+                                     rocblas_int m,
+                                     rocblas_int n,
+                                     rocblas_int k,
+                                     const float* alpha,
+                                     const float* const A[],
+                                     rocblas_int ld_a,
+                                     const float* const B[],
+                                     rocblas_int ld_b,
+                                     const float* beta,
+                                     float* const C[],
+                                     rocblas_int ld_c,
+                                     rocblas_int b_c)
+{
+    return rocblas_gemm_batched_impl<float>(
+        handle, trans_a, trans_b,
+        m, n, k,
+        alpha,
+        A, ld_a,
+        B, ld_b,
+        beta,
+        C, ld_c, b_c);
+}
+
+rocblas_status rocblas_dgemm_batched(rocblas_handle handle,
+                                     rocblas_operation trans_a,
+                                     rocblas_operation trans_b,
+                                     rocblas_int m,
+                                     rocblas_int n,
+                                     rocblas_int k,
+                                     const double* alpha,
+                                     const double* const A[],
+                                     rocblas_int ld_a,
+                                     const double* const B[],
+                                     rocblas_int ld_b,
+                                     const double* beta,
+                                     double* const C[],
+                                     rocblas_int ld_c,
+                                     rocblas_int b_c)
+{
+    return rocblas_gemm_batched_impl<double>(
+        handle, trans_a, trans_b,
+        m, n, k,
+        alpha,
+        A, ld_a,
+        B, ld_b,
+        beta,
+        C, ld_c, b_c);
 }
 
 /*******************************************************************************

@@ -2041,6 +2041,116 @@ rocblas_zgemm_strided_batched(
 /*! \brief BLAS Level 3 API
 
     \details
+    xGEMM_BATCHED performs one of the batched matrix-matrix operations
+
+        C[i*stride_c] = alpha*op( A[i*stride_a] )*op( B[i*stride_b] ) + beta*C[i*stride_c], for i in
+   [0,batch_count-1]
+
+    where op( X ) is one of
+
+        op( X ) = X      or
+        op( X ) = X**T   or
+        op( X ) = X**H,
+
+    alpha and beta are scalars, and A, B and C are strided batched matrices, with
+    op( A ) an m by k by batch_count strided_batched matrix,
+    op( B ) an k by n by batch_count strided_batched matrix and
+    C an m by n by batch_count strided_batched matrix.
+
+    @param[in]
+    handle    rocblas_handle.
+              handle to the rocblas library context queue.
+    @param[in]
+    transA    rocblas_operation
+              specifies the form of op( A )
+    @param[in]
+    transB    rocblas_operation
+              specifies the form of op( B )
+    @param[in]
+    m         rocblas_int.
+              matrix dimention m.
+    @param[in]
+    n         rocblas_int.
+              matrix dimention n.
+    @param[in]
+    k         rocblas_int.
+              matrix dimention k.
+    @param[in]
+    alpha     specifies the scalar alpha.
+    @param[in]
+    A         pointer storing strided batched matrix A on the GPU.
+    @param[in]
+    lda       rocblas_int
+              specifies the leading dimension of "A".
+    @param[in]
+    B         pointer storing strided batched matrix B on the GPU.
+    @param[in]
+    ldb       rocblas_int
+              specifies the leading dimension of "B".
+    @param[in]
+    beta      specifies the scalar beta.
+    @param[in, out]
+    C         pointer storing strided batched matrix C on the GPU.
+    @param[in]
+    ldc       rocblas_int
+              specifies the leading dimension of "C".
+    @param[in]
+    batch_count
+              rocblas_int
+              number of gemm operatons in the batch
+
+    ********************************************************************/
+ROCBLAS_EXPORT rocblas_status rocblas_hgemm_batched(rocblas_handle            handle,
+                                                    rocblas_operation         transa,
+                                                    rocblas_operation         transb,
+                                                    rocblas_int               m,
+                                                    rocblas_int               n,
+                                                    rocblas_int               k,
+                                                    const rocblas_half*       alpha,
+                                                    const rocblas_half* const A[],
+                                                    rocblas_int               lda,
+                                                    const rocblas_half* const B[],
+                                                    rocblas_int               ldb,
+                                                    const rocblas_half*       beta,
+                                                    rocblas_half* const       C[],
+                                                    rocblas_int               ldc,
+                                                    rocblas_int               batch_count);
+
+ROCBLAS_EXPORT rocblas_status rocblas_sgemm_batched(rocblas_handle     handle,
+                                                    rocblas_operation  transa,
+                                                    rocblas_operation  transb,
+                                                    rocblas_int        m,
+                                                    rocblas_int        n,
+                                                    rocblas_int        k,
+                                                    const float*       alpha,
+                                                    const float* const A[],
+                                                    rocblas_int        lda,
+                                                    const float* const B[],
+                                                    rocblas_int        ldb,
+                                                    const float*       beta,
+                                                    float* const       C[],
+                                                    rocblas_int        ldc,
+                                                    rocblas_int        batch_count);
+
+ROCBLAS_EXPORT rocblas_status rocblas_dgemm_batched(rocblas_handle      handle,
+                                                    rocblas_operation   transa,
+                                                    rocblas_operation   transb,
+                                                    rocblas_int         m,
+                                                    rocblas_int         n,
+                                                    rocblas_int         k,
+                                                    const double*       alpha,
+                                                    const double* const A[],
+                                                    rocblas_int         lda,
+                                                    const double* const B[],
+                                                    rocblas_int         ldb,
+                                                    const double*       beta,
+                                                    double* const       C[],
+                                                    rocblas_int         ldc,
+                                                    rocblas_int         batch_count);
+
+/*! \brief BLAS Level 3 API
+
+    \details
     xGEAM performs one of the matrix-matrix operations
 
         C = alpha*op( A ) + beta*op( B ),
