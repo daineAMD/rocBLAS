@@ -121,12 +121,8 @@ namespace
 
     // When Ti = To = Tc != void, this test applies.
     // When converted to bool, this functor returns true.
-    // Complex is not supported yet.
     template <typename T>
-    struct gemm_testing<T,
-                        T,
-                        T,
-                        typename std::enable_if<!std::is_same<T, void>{} && !is_complex<T>>::type>
+    struct gemm_testing<T, T, T, typename std::enable_if<!std::is_same<T, void>{}>::type>
     {
         explicit operator bool()
         {
@@ -183,13 +179,8 @@ namespace
 
     // When Ti != void, this test applies.
     // When converted to bool, this functor returns true.
-    // Complex is not supported yet.
     template <typename Ti, typename To, typename Tc>
-    struct gemm_ex_testing<
-        Ti,
-        To,
-        Tc,
-        typename std::enable_if<!std::is_same<Ti, void>{} && !is_complex<Ti>>::type>
+    struct gemm_ex_testing<Ti, To, Tc, typename std::enable_if<!std::is_same<Ti, void>{}>::type>
     {
         explicit operator bool()
         {
