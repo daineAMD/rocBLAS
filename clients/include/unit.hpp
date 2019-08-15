@@ -39,8 +39,8 @@
     {                                                                                \
         for(size_t k = 0; k < batch_count; k++)                                      \
             for(size_t j = 0; j < N; j++)                                            \
-                for(size_t i; i < M; i++)                                            \
-                    if(rocblas_isnan(hCPU[k][i + j * lda])) {                        \
+                for(size_t i = 0; i < M; i++)                                        \
+                    if (rocblas_isnan(hCPU[k][i + j * lda])) {                       \
                         ASSERT_TRUE(rocblas_isnan(hGPU[k][i + j * lda]));            \
                     } else {                                                         \
                         UNIT_ASSERT_EQ(hCPU[k][i + j * lda],                         \
@@ -228,6 +228,17 @@ void unit_check_general(rocblas_int    M,
                         rocblas_int    lda,
                         host_vector<T> hCPU[],
                         host_vector<T> hGPU[]);
+
+template <>
+inline void unit_check_general(rocblas_int                   M,
+                               rocblas_int                   N,
+                               rocblas_int                   batch_count,
+                               rocblas_int                   lda,
+                               host_vector<rocblas_bfloat16> hCPU[],
+                               host_vector<rocblas_bfloat16> hGPU[])
+{
+    UNIT_CHECK_B(M, N, batch_count, lda, hCPU, hGPU, ASSERT_BFLOAT16_EQ);
+}
 
 template <>
 inline void unit_check_general(rocblas_int               M,
