@@ -27,9 +27,7 @@ void testing_scal_batched(const Arguments& arg)
     // argument sanity check before allocating invalid memory
     if(N <= 0 || incx <= 0 || batch_count <= 0)
     {
-        static const size_t safe_size = 100; // arbitrarily set to 100
-        T**                 dx;
-        hipMalloc(&dx, sizeof(T*));
+        device_vector<T*, 0, T> dx(1);
         if(!dx)
         {
             CHECK_HIP_ERROR(hipErrorOutOfMemory);
@@ -39,7 +37,6 @@ void testing_scal_batched(const Arguments& arg)
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
         CHECK_ROCBLAS_ERROR(
             (rocblas_scal_batched<T, U>(handle, N, &h_alpha, dx, incx, batch_count)));
-        CHECK_HIP_ERROR(hipFree(dx));
         return;
     }
 
@@ -48,11 +45,9 @@ void testing_scal_batched(const Arguments& arg)
     // Naming: dX is in GPU (device) memory. hK is in CPU (host) memory, plz follow this practice
 
     // Device-arrays of pointers to device memory
-    T**              dx_1;
-    T**              dx_2;
-    device_vector<U> d_alpha(1);
-    hipMalloc(&dx_1, batch_count * sizeof(T*));
-    hipMalloc(&dx_2, batch_count * sizeof(T*));
+    device_vector<T*, 0, T> dx_1(batch_count);
+    device_vector<T*, 0, T> dx_2(batch_count);
+    device_vector<U>        d_alpha(1);
     if(!dx_1 || !dx_2 || !d_alpha)
     {
         CHECK_HIP_ERROR(hipErrorOutOfMemory);
@@ -66,17 +61,14 @@ void testing_scal_batched(const Arguments& arg)
 
     // Host-arrays of pointers to device memory
     // (intermediate arrays used for the transfers)
-    T* x_1[batch_count];
-    T* x_2[batch_count];
+    device_batch_vector<T> x_1(batch_count, size_x);
+    device_batch_vector<T> x_2(batch_count, size_x);
 
     for(int i = 0; i < batch_count; i++)
     {
         hx_1[i]    = host_vector<T>(size_x);
         hx_2[i]    = host_vector<T>(size_x);
         hx_gold[i] = host_vector<T>(size_x);
-
-        hipMalloc(&x_1[i], size_x * sizeof(T));
-        hipMalloc(&x_2[i], size_x * sizeof(T));
     }
 
     int last = batch_count - 1;
@@ -196,14 +188,6 @@ void testing_scal_batched(const Arguments& arg)
 
         std::cout << std::endl;
     }
-
-    for(int i = 0; i < batch_count; i++)
-    {
-        CHECK_HIP_ERROR(hipFree(x_1[i]));
-        CHECK_HIP_ERROR(hipFree(x_2[i]));
-    }
-    CHECK_HIP_ERROR(hipFree(dx_1));
-    CHECK_HIP_ERROR(hipFree(dx_2));
 }
 
 template <typename T, typename U = T>
@@ -219,8 +203,7 @@ void testing_scal_batched_bad_arg(const Arguments& arg)
     size_t size_x = N * size_t(incx);
 
     // allocate memory on device
-    T** dx;
-    hipMalloc(&dx, batch_count * sizeof(T));
+    device_vector<T*, 0, T> dx(batch_count);
     if(!dx)
     {
         CHECK_HIP_ERROR(hipErrorOutOfMemory);
@@ -232,6 +215,4 @@ void testing_scal_batched_bad_arg(const Arguments& arg)
     EXPECT_ROCBLAS_STATUS(
         (rocblas_scal_batched<T, U>)(handle, N, &h_alpha, nullptr, incx, batch_count),
         rocblas_status_invalid_pointer);
-
-    CHECK_HIP_ERROR(hipFree(dx));
 }
