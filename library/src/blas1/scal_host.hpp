@@ -44,7 +44,7 @@ rocblas_status rocblas_scal_strided_batched_template(rocblas_handle handle,
 {
     static constexpr int NB = 256;
     // Quick return if possible. Not Argument error
-    if(n <= 0 || incx <= 0 || batch_count <= 0)
+    if(n <= 0 || incx <= 0 || batch_count == 0)
         return rocblas_status_success;
 
     dim3        blocks((n - 1) / NB + 1, batch_count);

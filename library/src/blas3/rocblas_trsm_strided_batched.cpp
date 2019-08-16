@@ -190,8 +190,14 @@ namespace
             return rocblas_status_invalid_pointer;
         if(ldb < m)
             return rocblas_status_invalid_size;
+        if(batch_count < 0)
+            return rocblas_status_invalid_size;
 
-        // TODO: stride_a & stride_b & batch_count checks.
+        if(batch_count > 1)
+        {
+            if(stride_A < lda * k || stride_B < ldb * n)
+                return rocblas_status_invalid_size;
+        }
 
         //////////////////////
         // MEMORY MANAGEMENT//

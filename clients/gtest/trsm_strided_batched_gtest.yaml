@@ -104,7 +104,7 @@ Tests:
   alpha: *alpha_range
   stride_a: [1, 5000, 10000]
   stride_b: [1, 5000, 10000]
-  batch_count: [1, 20]
+  batch_count: [-1, 1, 20]
 
 - name: trsm_strided_batched_medium
   category: pre_checkin
@@ -118,7 +118,7 @@ Tests:
   alpha: *alpha_range
   stride_a: [1, 500000, 1000000]
   stride_b: [1, 500000, 1000000]
-  batch_count: [1, 5, 20]
+  batch_count: [0, 1, 5, 20]
 
 - name: trsm_strided_batched_testset1
   category: nightly

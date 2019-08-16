@@ -79,6 +79,8 @@ namespace
 
         if(!x)
             return rocblas_status_invalid_pointer;
+        if(batch_count < 0)
+            return rocblas_status_invalid_size;
 
         RETURN_ZERO_DEVICE_MEMORY_SIZE_IF_QUERIED(handle);
 

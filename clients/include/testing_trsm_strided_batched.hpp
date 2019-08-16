@@ -60,7 +60,8 @@ void testing_trsm_strided_batched(const Arguments& arg)
         }
 
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
-        EXPECT_ROCBLAS_STATUS(rocblas_trsm_strided_batched<T>(handle,
+        if(batch_count == 0)
+            CHECK_ROCBLAS_ERROR(rocblas_trsm_strided_batched<T>(handle,
                                                               side,
                                                               uplo,
                                                               transA,
@@ -74,8 +75,24 @@ void testing_trsm_strided_batched(const Arguments& arg)
                                                               dXorB,
                                                               ldb,
                                                               stride_b,
-                                                              batch_count),
-                              rocblas_status_invalid_size);
+                                                              batch_count));
+        else
+            EXPECT_ROCBLAS_STATUS(rocblas_trsm_strided_batched<T>(handle,
+                                                                side,
+                                                                uplo,
+                                                                transA,
+                                                                diag,
+                                                                M,
+                                                                N,
+                                                                &alpha_h,
+                                                                dA,
+                                                                lda,
+                                                                stride_a,
+                                                                dXorB,
+                                                                ldb,
+                                                                stride_b,
+                                                                batch_count),
+                                rocblas_status_invalid_size);
         return;
     }
 

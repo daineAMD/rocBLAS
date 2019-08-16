@@ -1163,23 +1163,13 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
                                                      rocblas_int       supplied_invA_size = 0,
                                                      rocblas_int       stride_invA        = 0)
 {
-    if(batch_count <= 0)
-    {
-        return rocblas_status_invalid_size;
-    }
-
-    rocblas_int k = side == rocblas_side_left ? m : n;
-    if(batch_count > 1)
-    {
-        if(stride_A < lda * k || stride_B < ldb * n)
-        {
-            return rocblas_status_invalid_size;
-        }
-    }
+    if(batch_count == 0)
+        return rocblas_status_success;
 
     if(transA == rocblas_operation_conjugate_transpose)
         transA = rocblas_operation_transpose;
 
+    rocblas_int k = side == rocblas_side_left ? m : n;
     // Whether size is an exact multiple of blocksize
     const bool exact_blocks = (k % BLOCK) == 0;
 
@@ -1302,7 +1292,6 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
         auto c_temp = x_temp;
 
         // batched trtri invert diagonal part (BLOCK*BLOCK) of A into invA
-        //for(int b = 0; b < batch_count; b++)
         int b  = 0;
         status = rocblas_trtri_trsm_template<BLOCK>(handle,
                                                     (T*)c_temp,
@@ -1314,7 +1303,7 @@ rocblas_status rocblas_trsm_strided_batched_template(rocblas_handle    handle,
                                                     stride_A,
                                                     (T*)invA + b * stride_invA,
                                                     stride_invA,
-                                                    batch_count); //1); //batch_count);
+                                                    batch_count);
 
         if(status != rocblas_status_success)
             return status;
