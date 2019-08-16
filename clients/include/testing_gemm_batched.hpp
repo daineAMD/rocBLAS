@@ -59,7 +59,7 @@ void testing_gemm_batched(const Arguments& arg)
     if(M < 0 || N < 0 || K < 0 || lda < A_row || ldb < B_row || ldc < M || batch_count < 0)
     {
         rocblas_int safe_size = 100;
-        rocblas_int num_batch = 1;
+        rocblas_int num_batch = batch_count < 0 ? 1 : batch_count;
         // device_vector<T*, 0, T> dA(1);
         // device_vector<T*, 0, T> dB(1);
         // device_vector<T*, 0, T> dC(1);
