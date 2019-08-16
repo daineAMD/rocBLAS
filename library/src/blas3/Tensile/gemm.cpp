@@ -1131,7 +1131,6 @@ rocblas_status rocblas_gemm_batched_impl(rocblas_handle    handle,
         return rocblas_status_success;
     }
 
-    // TODO: ???
     rocblas_int stride_a;
     rocblas_int stride_b;
     rocblas_int stride_c;
@@ -1162,7 +1161,9 @@ rocblas_status rocblas_gemm_batched_impl(rocblas_handle    handle,
     hipError_t status;
     for(int i = 0; i < b_c; i++)
     {
-        status = callTensile<T>(alpha, beta, A[i], B[i], C[i],
+        // We cannot do this with a device array, so array of pointers
+        // must be on host for now
+        status = call_tensile<T>(alpha, beta, A[i], B[i], C[i],
                                 trans_a, trans_b,
                                 strideC1, strideC2,
                                 strideA1, strideA2,
@@ -1639,21 +1640,21 @@ rocblas_status rocblas_zgemm_strided_batched(rocblas_handle handle,
  * Batched GEMM APIs
  ******************************************************************************/
 
-rocblas_status rocblas_hgemm_batched(rocblas_handle handle,
-                                     rocblas_operation trans_a,
-                                     rocblas_operation trans_b,
-                                     rocblas_int m,
-                                     rocblas_int n,
-                                     rocblas_int k,
-                                     const rocblas_half* alpha,
+rocblas_status rocblas_hgemm_batched(rocblas_handle            handle,
+                                     rocblas_operation         trans_a,
+                                     rocblas_operation         trans_b,
+                                     rocblas_int               m,
+                                     rocblas_int               n,
+                                     rocblas_int               k,
+                                     const rocblas_half*       alpha,
                                      const rocblas_half* const A[],
-                                     rocblas_int ld_a,
+                                     rocblas_int               ld_a,
                                      const rocblas_half* const B[],
-                                     rocblas_int ld_b,
-                                     const rocblas_half *beta,
-                                     rocblas_half* const C[],
-                                     rocblas_int ld_c,
-                                     rocblas_int b_c)
+                                     rocblas_int               ld_b,
+                                     const rocblas_half*       beta,
+                                     rocblas_half* const       C[],
+                                     rocblas_int               ld_c,
+                                     rocblas_int               b_c)
 {
     return rocblas_gemm_batched_impl<rocblas_half>(
         handle, trans_a, trans_b,
@@ -1665,21 +1666,21 @@ rocblas_status rocblas_hgemm_batched(rocblas_handle handle,
         C, ld_c, b_c);
 }
 
-rocblas_status rocblas_sgemm_batched(rocblas_handle handle,
-                                     rocblas_operation trans_a,
-                                     rocblas_operation trans_b,
-                                     rocblas_int m,
-                                     rocblas_int n,
-                                     rocblas_int k,
-                                     const float* alpha,
+rocblas_status rocblas_sgemm_batched(rocblas_handle     handle,
+                                     rocblas_operation  trans_a,
+                                     rocblas_operation  trans_b,
+                                     rocblas_int        m,
+                                     rocblas_int        n,
+                                     rocblas_int        k,
+                                     const float*       alpha,
                                      const float* const A[],
-                                     rocblas_int ld_a,
+                                     rocblas_int        ld_a,
                                      const float* const B[],
-                                     rocblas_int ld_b,
-                                     const float* beta,
-                                     float* const C[],
-                                     rocblas_int ld_c,
-                                     rocblas_int b_c)
+                                     rocblas_int        ld_b,
+                                     const float*       beta,
+                                     float* const       C[],
+                                     rocblas_int        ld_c,
+                                     rocblas_int        b_c)
 {
     return rocblas_gemm_batched_impl<float>(
         handle, trans_a, trans_b,
@@ -1691,21 +1692,21 @@ rocblas_status rocblas_sgemm_batched(rocblas_handle handle,
         C, ld_c, b_c);
 }
 
-rocblas_status rocblas_dgemm_batched(rocblas_handle handle,
-                                     rocblas_operation trans_a,
-                                     rocblas_operation trans_b,
-                                     rocblas_int m,
-                                     rocblas_int n,
-                                     rocblas_int k,
-                                     const double* alpha,
+rocblas_status rocblas_dgemm_batched(rocblas_handle      handle,
+                                     rocblas_operation   trans_a,
+                                     rocblas_operation   trans_b,
+                                     rocblas_int         m,
+                                     rocblas_int         n,
+                                     rocblas_int         k,
+                                     const double*       alpha,
                                      const double* const A[],
-                                     rocblas_int ld_a,
+                                     rocblas_int         ld_a,
                                      const double* const B[],
-                                     rocblas_int ld_b,
-                                     const double* beta,
-                                     double* const C[],
-                                     rocblas_int ld_c,
-                                     rocblas_int b_c)
+                                     rocblas_int         ld_b,
+                                     const double*       beta,
+                                     double* const       C[],
+                                     rocblas_int         ld_c,
+                                     rocblas_int         b_c)
 {
     return rocblas_gemm_batched_impl<double>(
         handle, trans_a, trans_b,

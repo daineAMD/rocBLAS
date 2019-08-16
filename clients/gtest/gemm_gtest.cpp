@@ -63,7 +63,8 @@ namespace
                 return !strcmp(arg.function, "gemm_ex") || !strcmp(arg.function, "gemm_ex_bad_arg");
 
             case GEMM_BATCHED:
-                return !strcmp(arg.function, "gemm_batched");
+                return !strcmp(arg.function, "gemm_batched")
+                       || !strcmp(arg.function, "gemm_batched_bad_arg");
 
             case GEMM_STRIDED_BATCHED:
                 return !strcmp(arg.function, "gemm_strided_batched");
@@ -136,6 +137,8 @@ namespace
                 testing_gemm_bad_arg<T>(arg);
             else if(!strcmp(arg.function, "gemm_batched"))
                 testing_gemm_batched<T>(arg);
+            else if(!strcmp(arg.function, "gemm_batched_bad_arg"))
+                testing_gemm_batched_bad_arg<T>(arg);
             else if(!strcmp(arg.function, "gemm_strided_batched"))
                 testing_gemm_strided_batched<T>(arg);
             else

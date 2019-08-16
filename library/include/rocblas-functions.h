@@ -2096,19 +2096,19 @@ ROCBLAS_EXPORT rocblas_status rocblas_zgemm_strided_batched(rocblas_handle      
     @param[in]
     alpha     specifies the scalar alpha.
     @param[in]
-    A         pointer storing strided batched matrix A on the GPU.
+    A         HOST array of DEVICE pointers storing A matricies on the GPU.
     @param[in]
     lda       rocblas_int
               specifies the leading dimension of "A".
     @param[in]
-    B         pointer storing strided batched matrix B on the GPU.
+    B         HOST array of DEVICE pointers storing B matricies on the GPU.
     @param[in]
     ldb       rocblas_int
               specifies the leading dimension of "B".
     @param[in]
     beta      specifies the scalar beta.
     @param[in, out]
-    C         pointer storing strided batched matrix C on the GPU.
+    C         HOST array of DEVICE pointers storing C matricies on the GPU.
     @param[in]
     ldc       rocblas_int
               specifies the leading dimension of "C".
