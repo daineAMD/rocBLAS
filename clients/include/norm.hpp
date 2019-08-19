@@ -346,6 +346,4 @@ inline double norm_check_symmetric<rocblas_half, 0>(char          norm_type,
     return norm_check_symmetric(norm_type, uplo, N, lda, hCPU_double.data(), hGPU_double.data());
 }
 
-
-
 #endif

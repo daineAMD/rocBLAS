@@ -88,22 +88,21 @@ void testing_gemm_batched(const Arguments& arg)
                                                           batch_count));
         else
             EXPECT_ROCBLAS_STATUS((rocblas_gemm_batched<T>)(handle,
-                                                    transA,
-                                                    transB,
-                                                    M,
-                                                    N,
-                                                    K,
-                                                    &h_alpha,
-                                                    Av,
-                                                    lda,
-                                                    Bv,
-                                                    ldb,
-                                                    &h_beta,
-                                                    Cv,
-                                                    ldc,
-                                                    batch_count),
-                        rocblas_status_invalid_size);
-            
+                                                            transA,
+                                                            transB,
+                                                            M,
+                                                            N,
+                                                            K,
+                                                            &h_alpha,
+                                                            Av,
+                                                            lda,
+                                                            Bv,
+                                                            ldb,
+                                                            &h_beta,
+                                                            Cv,
+                                                            ldc,
+                                                            batch_count),
+                                  rocblas_status_invalid_size);
 
         return;
     }

@@ -66,16 +66,16 @@ void testing_scal_strided_batched(const Arguments& arg)
                                                                        incx,
                                                                        stridex,
                                                                        batch_count),
-                                                                       rocblas_status_invalid_size);
+                                  rocblas_status_invalid_size);
         else
             CHECK_ROCBLAS_ERROR((rocblas_scal_strided_batched<T, U>)(handle,
-                                                                    N,
-                                                                    &h_alpha,
-                                                                    dx,
-                                                                    incx,
-                                                                    stridex,
-                                                                    batch_count));
-            
+                                                                     N,
+                                                                     &h_alpha,
+                                                                     dx,
+                                                                     incx,
+                                                                     stridex,
+                                                                     batch_count));
+
         return;
     }
 
