@@ -7,6 +7,7 @@
 #include "rocblas_datatype2string.hpp"
 #include "rocblas_test.hpp"
 #include "testing_trsm.hpp"
+#include "testing_trsm_batched.hpp"
 #include "testing_trsm_strided_batched.hpp"
 #include "type_dispatch.hpp"
 #include <cctype>
@@ -19,6 +20,7 @@ namespace
     enum trsm_test_type
     {
         TRSM,
+        TRSM_BATCHED,
         TRSM_STRIDED_BATCHED
     };
 
@@ -39,6 +41,8 @@ namespace
             {
             case TRSM:
                 return !strcmp(arg.function, "trsm");
+            case TRSM_BATCHED:
+                return !strcmp(arg.function, "trsm_batched");
             case TRSM_STRIDED_BATCHED:
                 return !strcmp(arg.function, "trsm_strided_batched");
             }
@@ -61,7 +65,9 @@ namespace
             name << arg.ldb;
 
             if(TRSM_TYPE == TRSM_STRIDED_BATCHED)
-                name << '_' << arg.stride_b << '_' << arg.batch_count;
+                name << '_' << arg.stride_b;
+            if(TRSM_TYPE == TRSM_STRIDED_BATCHED || TRSM_TYPE == TRSM_BATCHED)
+                name << '_' << arg.batch_count;
 
             return std::move(name);
         }
@@ -89,6 +95,8 @@ namespace
         {
             if(!strcmp(arg.function, "trsm"))
                 testing_trsm<T>(arg);
+            else if(!strcmp(arg.function, "trsm_batched"))
+                testing_trsm_batched<T>(arg);
             else if(!strcmp(arg.function, "trsm_strided_batched"))
                 testing_trsm_strided_batched<T>(arg);
             else
@@ -102,6 +110,13 @@ namespace
         rocblas_simple_dispatch<trsm_testing>(GetParam());
     }
     INSTANTIATE_TEST_CATEGORIES(trsm);
+
+    using trsm_batched = trsm_template<trsm_testing, TRSM_BATCHED>;
+    TEST_P(trsm_batched, blas3)
+    {
+        rocblas_simple_dispatch<trsm_testing>(GetParam());
+    }
+    INSTANTIATE_TEST_CATEGORIES(trsm_batched);
 
     using trsm_strided_batched = trsm_template<trsm_testing, TRSM_STRIDED_BATCHED>;
     TEST_P(trsm_strided_batched, blas3)

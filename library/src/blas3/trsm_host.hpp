@@ -1132,15 +1132,213 @@ rocblas_status rocblas_trsm_batched_template(rocblas_handle    handle,
                                              rocblas_int       m,
                                              rocblas_int       n,
                                              const T*          alpha,
-                                             const T*          A[],
+                                             const T* const    A[],
                                              rocblas_int       lda,
                                              T*                B[],
                                              rocblas_int       ldb,
                                              rocblas_int       batch_count,
-                                             const T*          supplied_invA[]    = nullptr,
+                                             const T*          supplied_invA      = nullptr,
                                              rocblas_int       supplied_invA_size = 0)
 {
-    return rocblas_status_not_implemented;
+    // return rocblas_status_not_implemented;
+    if(batch_count == 0)
+        return rocblas_status_success;
+
+    if(transA == rocblas_operation_conjugate_transpose)
+        transA = rocblas_operation_transpose;
+
+    rocblas_int k = side == rocblas_side_left ? m : n;
+    // Whether size is an exact multiple of blocksize
+    const bool exact_blocks = (k % BLOCK) == 0;
+
+    // perf_status indicates whether optimal performance is obtainable with available memory
+    rocblas_status perf_status = rocblas_status_success;
+
+    size_t invA_bytes   = 0;
+    size_t c_temp_bytes = 0;
+
+    // For user-supplied invA, check to make sure size is large enough
+    // If not large enough, indicate degraded performance and ignore supplied invA
+    if(supplied_invA && supplied_invA_size / BLOCK < k)
+    {
+        static int msg = fputs("WARNING: TRSM invA_size argument is too small; invA argument "
+                               "is being ignored; TRSM performance is degraded\n",
+                               stderr);
+        perf_status    = rocblas_status_perf_degraded;
+        supplied_invA  = nullptr;
+    }
+    rocblas_int stride_invA = k * BLOCK;
+    if(!supplied_invA)
+    {
+        // Only allocate bytes for invA if supplied_invA == nullptr or supplied_invA_size is too small
+        invA_bytes = sizeof(T) * BLOCK * k * batch_count + ((batch_count - 1) * stride_invA);
+
+        // When k < BLOCK, C is unnecessary for trtri
+        c_temp_bytes = (k / BLOCK) * (sizeof(T) * (BLOCK / 2) * (BLOCK / 2));
+
+        // For the TRTRI last diagonal block we need remainder space if k % BLOCK != 0
+        if(!exact_blocks)
+        {
+            // TODO: Make this more accurate -- right now it's much larger than necessary
+            size_t remainder_bytes = sizeof(T) * ROCBLAS_TRTRI_NB * BLOCK * 2;
+
+            // C is the maximum of the temporary space needed for TRTRI
+            c_temp_bytes = max(c_temp_bytes, remainder_bytes);
+        }
+    }
+
+    // Chunk size for special algorithm
+    size_t B_chunk_size = 0;
+
+    // Temporary solution matrix
+    size_t x_temp_bytes;
+
+    if(exact_blocks)
+    {
+        // Optimal B_chunk_size is the orthogonal dimension to k
+        B_chunk_size = size_t(m) + size_t(n) - size_t(k);
+
+        // When k % BLOCK == 0, we only need BLOCK * B_chunk_size space
+        x_temp_bytes = sizeof(T) * BLOCK * B_chunk_size; // * batch_count;
+    }
+    else
+    {
+        // When k % BLOCK != 0, we need m * n space
+        x_temp_bytes = sizeof(T) * m * n; // * batch_count;
+    }
+
+    // X and C temporaries can share space, so the maximum size is allocated
+    size_t x_c_temp_bytes = max(x_temp_bytes, c_temp_bytes);
+
+    // If this is a device memory size query, set optimal size and return changed status
+    if(handle->is_device_memory_size_query())
+        return handle->set_optimal_device_memory_size(x_c_temp_bytes, invA_bytes);
+
+    // Attempt to allocate optimal memory size
+    auto mem = handle->device_malloc(x_c_temp_bytes, invA_bytes);
+    if(!mem)
+    {
+        if(exact_blocks)
+        {
+            B_chunk_size   = 1; // Fall back on chunk size of 1 (like TRSV)
+            x_temp_bytes   = sizeof(T) * BLOCK; // * batch_count;
+            x_c_temp_bytes = max(x_temp_bytes, c_temp_bytes);
+            mem            = handle->device_malloc(x_c_temp_bytes, invA_bytes);
+        }
+        if(!mem)
+            return rocblas_status_memory_error;
+
+        // Mark performance as degraded
+        perf_status = rocblas_status_perf_degraded;
+
+        // One-time warning about degraded performance
+        static int msg = fputs("WARNING: Device memory allocation size is too small for TRSM; "
+                               "TRSM performance is degraded\n",
+                               stderr);
+    }
+
+    // Get pointers to allocated device memory
+    // Note: Order of pointers in std::tie(...) must match order of sizes in handle->device_malloc(...)
+    void* x_temp;
+    void* invA;
+    std::tie(x_temp, invA) = mem;
+
+    // Temporarily switch to host pointer mode, saving current pointer mode, restored on return
+    auto saved_pointer_mode = handle->push_pointer_mode(rocblas_pointer_mode_host);
+
+    // Get alpha
+    T alpha_h;
+    if(saved_pointer_mode == rocblas_pointer_mode_host)
+        alpha_h = *alpha;
+    else
+        RETURN_IF_HIP_ERROR(hipMemcpy(&alpha_h, alpha, sizeof(T), hipMemcpyDeviceToHost));
+
+    rocblas_status status = rocblas_status_success;
+    // rocblas_int stride_invA = BLOCK * k;
+    if(supplied_invA)
+        invA = const_cast<T*>(supplied_invA);
+    else
+    {
+        // c_temp and x_temp can reuse the same device memory
+        auto c_temp = x_temp;
+
+        // batched trtri invert diagonal part (BLOCK*BLOCK) of A into invA
+        for(int b = 0; b < batch_count; b++)
+        {
+            status = rocblas_trtri_trsm_template<BLOCK>(handle,
+                                                        (T*)c_temp,
+                                                        uplo,
+                                                        diag,
+                                                        k,
+                                                        A[b],
+                                                        lda,
+                                                        0,
+                                                        (T*)invA + b * stride_invA,
+                                                        0,
+                                                        1); //batch_count);
+            if(status != rocblas_status_success)
+                return status;
+        }
+    }
+
+    for(int b = 0; b < batch_count; b++)
+    {
+        if(exact_blocks)
+        {
+            status = special_trsm_strided_batched_template<BLOCK>(handle,
+                                                                  side,
+                                                                  uplo,
+                                                                  transA,
+                                                                  diag,
+                                                                  m,
+                                                                  n,
+                                                                  &alpha_h,
+                                                                  A[b],
+                                                                  lda,
+                                                                  lda * k,
+                                                                  B[b],
+                                                                  ldb,
+                                                                  ldb * n,
+                                                                  1, //batch_count,
+                                                                  (T*)invA + b * stride_invA,
+                                                                  stride_invA,
+                                                                  B_chunk_size,
+                                                                  (T*)x_temp);
+        }
+        else
+        {
+            status
+                = (side == rocblas_side_left
+                       ? rocblas_trsm_strided_batched_left<BLOCK, T>
+                       : rocblas_trsm_strided_batched_right<BLOCK, T>)(handle,
+                                                                       uplo,
+                                                                       transA,
+                                                                       m,
+                                                                       n,
+                                                                       &alpha_h,
+                                                                       A[b],
+                                                                       lda,
+                                                                       lda * k,
+                                                                       B[b],
+                                                                       ldb,
+                                                                       ldb * n,
+                                                                       1, //batch_count,
+                                                                       (T*)invA + b * stride_invA,
+                                                                       stride_invA,
+                                                                       (T*)x_temp);
+            // Copy solution to B
+            if(status == rocblas_status_success)
+                copy_block_unit(
+                    handle, m, n, (const T*)x_temp, m, 0, (T*)B[b], ldb, 0, 1); //batch_count);
+        }
+
+        if(status != rocblas_status_success)
+            return status;
+    }
+
+    // If status is successful, return perf_status; else return error
+    // return rocblas_status_success;
+    return status == rocblas_status_success ? perf_status : status;
 }
 
 template <rocblas_int BLOCK, typename T>
