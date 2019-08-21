@@ -309,9 +309,8 @@ void testing_trsm_batched(const Arguments& arg)
                 for(int j = 0; j < M; j++)
                 {
                     int idx = j + i * ldb;
-                    //std::cout << "idx: " << idx << "\n";
                     if(hX[b][idx] != 0)
-                    { //std::cout << "A\n";
+                    {
                         err_1 += std::abs((hX[b][idx] - hXorB_1[b][idx]) / hX[b][idx]);
                         err_2 += std::abs((hX[b][idx] - hXorB_2[b][idx]) / hX[b][idx]);
                     }

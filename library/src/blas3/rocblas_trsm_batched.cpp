@@ -190,8 +190,7 @@ namespace
                                                          : rocblas_status_success;
 
         rocblas_status status;
-        // for(int b = 0; b < batch_count; b++)
-        // {
+
         status = rocblas_trsm_batched_template<BLOCK, T>(handle,
                                                          side,
                                                          uplo,
@@ -204,30 +203,12 @@ namespace
                                                          lda,
                                                          B,
                                                          ldb,
-                                                         batch_count); //,
-            //supplied_invA,
-            //supplied_invA_size);
-        if(status != rocblas_status_success)
-            return status;
-        // quick/trsm_batched.blas3/f32_r_LLNN_10_10_1_20_100_0_20
+                                                         batch_count,
+                                                         supplied_invA,
+                                                         supplied_invA_size);
 
-        // }
         return status;
-        // return rocblas_trsm_batched_template<BLOCK, T>(handle,
-        //                                                side,
-        //                                                uplo,
-        //                                                transA,
-        //                                                diag,
-        //                                                m,
-        //                                                n,
-        //                                                alpha,
-        //                                                A,
-        //                                                lda,
-        //                                                B,
-        //                                                ldb,
-        //                                                batch_count,
-        //                                                supplied_invA,
-        //                                                supplied_invA_size);
+
     }
 
 } // namespace
