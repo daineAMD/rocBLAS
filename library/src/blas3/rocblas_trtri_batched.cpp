@@ -92,7 +92,7 @@ namespace
         if(n <= NB)
         {
             status = rocblas_trtri_small_batched<NB>(
-                handle, uplo, diag, n, A, lda, 0, bsa, invA, ldinvA, 0, bsinvA, 1, batch_count);
+                handle, uplo, diag, n, A, lda, bsa, 0, invA, ldinvA, bsinvA, 0, batch_count, 1);
         }
         else
         {
@@ -114,14 +114,14 @@ namespace
                                                      n,
                                                      A,
                                                      lda,
-                                                     0,
                                                      bsa,
+                                                     0,
                                                      invA,
                                                      ldinvA,
-                                                     0,
                                                      bsinvA,
-                                                     1,
+                                                     0,
                                                      batch_count,
+                                                     1,
                                                      (T*)C_tmp);
         }
 
