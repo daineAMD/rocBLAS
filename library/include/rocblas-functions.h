@@ -1397,29 +1397,29 @@ ROCBLAS_EXPORT rocblas_status rocblas_dtrtri(rocblas_handle   handle,
               numbers of matrices in the batch
     ********************************************************************/
 
-ROCBLAS_EXPORT rocblas_status rocblas_strtri_batched(rocblas_handle   handle,
-                                                     rocblas_fill     uplo,
-                                                     rocblas_diagonal diag,
-                                                     rocblas_int      n,
-                                                     const float*     A,
-                                                     rocblas_int      lda,
-                                                     rocblas_int      stride_a,
-                                                     float*           invA,
-                                                     rocblas_int      ldinvA,
-                                                     rocblas_int      stride_invA,
-                                                     rocblas_int      batch_count);
+ROCBLAS_EXPORT rocblas_status rocblas_strtri_strided_batched(rocblas_handle   handle,
+                                                             rocblas_fill     uplo,
+                                                             rocblas_diagonal diag,
+                                                             rocblas_int      n,
+                                                             const float*     A,
+                                                             rocblas_int      lda,
+                                                             rocblas_int      stride_a,
+                                                             float*           invA,
+                                                             rocblas_int      ldinvA,
+                                                             rocblas_int      stride_invA,
+                                                             rocblas_int      batch_count);
 
-ROCBLAS_EXPORT rocblas_status rocblas_dtrtri_batched(rocblas_handle   handle,
-                                                     rocblas_fill     uplo,
-                                                     rocblas_diagonal diag,
-                                                     rocblas_int      n,
-                                                     const double*    A,
-                                                     rocblas_int      lda,
-                                                     rocblas_int      stride_a,
-                                                     double*          invA,
-                                                     rocblas_int      ldinvA,
-                                                     rocblas_int      stride_invA,
-                                                     rocblas_int      batch_count);
+ROCBLAS_EXPORT rocblas_status rocblas_dtrtri_strided_batched(rocblas_handle   handle,
+                                                             rocblas_fill     uplo,
+                                                             rocblas_diagonal diag,
+                                                             rocblas_int      n,
+                                                             const double*    A,
+                                                             rocblas_int      lda,
+                                                             rocblas_int      stride_a,
+                                                             double*          invA,
+                                                             rocblas_int      ldinvA,
+                                                             rocblas_int      stride_invA,
+                                                             rocblas_int      batch_count);
 
 /*! \brief BLAS Level 3 API
 
@@ -2891,13 +2891,13 @@ ROCBLAS_EXPORT rocblas_status rocblas_gemm_strided_batched_ex(rocblas_handle    
     Setting up invA:
     The accepted invA matrix consists of the packed 128x128 inverses of the diagonal blocks of
     matrix A, followed by any smaller diagonal block that remains.
-    To set up invA it is recommended that rocblas_trtri_batched be used with matrix A as the input.
+    To set up invA it is recommended that rocblas_trtri_strided_batched be used with matrix A as the input.
 
     Device memory of size 128 x k should be allocated for invA ahead of time, where k is m when
     rocblas_side_left and is n when rocblas_side_right. The actual number of elements in invA
     should be passed as invA_size.
 
-    To begin, rocblas_trtri_batched must be called on the full 128x128 sized diagonal blocks of
+    To begin, rocblas_trtri_strided_batched must be called on the full 128x128 sized diagonal blocks of
     matrix A. Below are the restricted parameters:
       - n = 128
       - ldinvA = 128

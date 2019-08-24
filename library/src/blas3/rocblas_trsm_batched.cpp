@@ -179,7 +179,6 @@ namespace
         if((m < 0 || n < 0) && batch_count > 0)
             return rocblas_status_invalid_size;
 
-
         //////////////////////
         // MEMORY MANAGEMENT//
         //////////////////////
@@ -208,7 +207,6 @@ namespace
                                                          supplied_invA_size);
 
         return status;
-
     }
 
 } // namespace

@@ -32,7 +32,7 @@ namespace
         if(!invA)
             return rocblas_status_invalid_pointer;
 
-        size_t size = rocblas_trtri_batched_temp_size<NB>(n, 1) * sizeof(T);
+        size_t size = rocblas_trtri_strided_batched_temp_size<NB>(n, 1) * sizeof(T);
         if(handle->is_device_memory_size_query())
             return handle->set_optimal_device_memory_size(size);
 
