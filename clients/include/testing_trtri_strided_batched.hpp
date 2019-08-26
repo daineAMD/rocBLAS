@@ -16,7 +16,7 @@
 #include "utility.hpp"
 
 template <typename T>
-void testing_trtri_batched(const Arguments& arg)
+void testing_trtri_strided_batched(const Arguments& arg)
 {
     rocblas_int N           = arg.N;
     rocblas_int lda         = arg.lda;
@@ -48,7 +48,7 @@ void testing_trtri_batched(const Arguments& arg)
         }
 
         EXPECT_ROCBLAS_STATUS(
-            rocblas_trtri_batched<T>(
+            rocblas_trtri_strided_batched<T>(
                 handle, uplo, diag, N, dA, lda, bsa, dinvA, lda, bsa, batch_count),
             rocblas_status_invalid_size);
         return;
@@ -118,12 +118,12 @@ void testing_trtri_batched(const Arguments& arg)
         gpu_time_used = get_time_us(); // in microseconds
     }
 
-    CHECK_ROCBLAS_ERROR(rocblas_trtri_batched<T>(
+    CHECK_ROCBLAS_ERROR(rocblas_trtri_strided_batched<T>(
         handle, uplo, diag, N, dA, lda, bsa, dinvA, lda, bsa, batch_count));
 
     // Test in place
-    CHECK_ROCBLAS_ERROR(
-        rocblas_trtri_batched<T>(handle, uplo, diag, N, dA, lda, bsa, dA, lda, bsa, batch_count));
+    CHECK_ROCBLAS_ERROR(rocblas_trtri_strided_batched<T>(
+        handle, uplo, diag, N, dA, lda, bsa, dA, lda, bsa, batch_count));
 
     if(arg.timing)
     {
