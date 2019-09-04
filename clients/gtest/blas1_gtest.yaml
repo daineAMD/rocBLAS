@@ -39,6 +39,8 @@ Tests:
       - scal:  *single_double_precisions_complex_real
       - scal:  *single_double_complex_real_in_complex_out
       - swap:  *single_double_precisions_complex_real
+      - rot:   *rot_precisions
+      - rotm:   *single_double_precisions_complex_real
 
   - name: blas1_batched
     category: quick
@@ -82,6 +84,8 @@ Tests:
       - scal:  *single_double_precisions_complex_real
       - scal:  *single_double_complex_real_in_complex_out
       - swap:  *single_double_precisions_complex_real
+      - rot:   *rot_precisions
+      - rotm:   *single_double_precisions_complex_real
 
   - name: blas1_batched
     category: pre_checkin
@@ -115,11 +119,13 @@ Tests:
       - iamin_bad_arg: *single_double_precisions_complex_real
       - axpy_bad_arg:  *half_single_precisions_complex_real
       - copy_bad_arg:  *single_double_precisions_complex_real
-      - dot:   *half_bfloat_single_double_complex_real_precisions
+      - dot_bad_arg:   *half_bfloat_single_double_complex_real_precisions
       - dotc_bad_arg:  *single_double_precisions_complex
       - scal_bad_arg:  *single_double_precisions_complex_real
       - scal_bad_arg:  *single_double_complex_real_in_complex_out
       - swap_bad_arg:  *single_double_precisions_complex_real
+      - rotm_bad_arg:  *single_double_precisions_complex_real
+      - rotmg_bad_arg: *single_double_precisions_complex_real
 
   - name: blas1_batched_bad_arg
     category: pre_checkin
@@ -135,7 +141,5 @@ Tests:
     function:
       - scal_strided_batched_bad_arg:  *single_double_precisions_complex_real
       - scal_strided_batched_bad_arg:  *single_double_complex_real_in_complex_out
-
-
 
 ...
