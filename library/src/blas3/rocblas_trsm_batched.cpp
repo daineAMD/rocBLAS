@@ -189,7 +189,6 @@ namespace
                                                          : rocblas_status_success;
 
         rocblas_status status;
-
         status = rocblas_trsm_batched_template<BLOCK, T>(handle,
                                                          side,
                                                          uplo,

@@ -11,6 +11,7 @@ Definitions:
     - { M:   192, N:   192, lda:   192, ldb:   192 }
     - { M:   600, N:   500, lda:   600, ldb:   600 }
     - { M:   800, N:   700, lda:   801, ldb:   701 }
+    - { M:   128, N:   128, lda:   128, ldb:   128 }
 
   - &large_matrix_size_range
     - { M:  1024, N:  1024, lda:  1024, ldb:  1024 }

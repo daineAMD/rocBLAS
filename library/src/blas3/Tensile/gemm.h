@@ -163,10 +163,9 @@ inline rocblas_status validateArgs(rocblas_handle    handle,
     if(!c || !a || !b || !alpha || !beta)
         return rocblas_status_invalid_pointer;
 
-    // Using host array for now, can validate elements
-    for(int i = 0; i < batch_count; i++)
-        if(!a[i] || !b[i] || !c[i])
-            return rocblas_status_invalid_pointer;
+    // for(int i = 0; i < batch_count; i++)
+    //     if(!a[i] || !b[i] || !c[i])
+    //         return rocblas_status_invalid_pointer;
 
     rocblas_int num_cols_c = n;
     rocblas_int num_rows_c = m;

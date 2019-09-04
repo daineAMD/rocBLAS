@@ -48,13 +48,10 @@ void testing_trsm_batched(const Arguments& arg)
     {
         static const size_t safe_size = 100; // arbitrarily set to 100
         rocblas_int         num_batch = batch_count < 0 ? 1 : batch_count;
-        // device_vector<T*, 0, T>    dA(1);
-        // device_vector<T*, 0, T>    dXorB(1);
+        device_vector<T*, 0, T>    dA(1);
+        device_vector<T*, 0, T>    dXorB(1);
 
-        device_batch_vector<T> Av(num_batch, safe_size);
-        device_batch_vector<T> XorBv(num_batch, safe_size);
-
-        if(!Av || !XorBv)
+        if(!dA || !dXorB)
         {
             CHECK_HIP_ERROR(hipErrorOutOfMemory);
             return;
@@ -70,9 +67,9 @@ void testing_trsm_batched(const Arguments& arg)
                                                         M,
                                                         N,
                                                         &alpha_h,
-                                                        Av,
+                                                        dA,
                                                         lda,
-                                                        XorBv,
+                                                        dXorB,
                                                         ldb,
                                                         batch_count));
         else
@@ -84,9 +81,9 @@ void testing_trsm_batched(const Arguments& arg)
                                                           M,
                                                           N,
                                                           &alpha_h,
-                                                          Av,
+                                                          dA,
                                                           lda,
-                                                          XorBv,
+                                                          dXorB,
                                                           ldb,
                                                           batch_count),
                                   rocblas_status_invalid_size);
@@ -95,12 +92,12 @@ void testing_trsm_batched(const Arguments& arg)
 
     // Naming: dK is in GPU (device) memory. hK is in CPU (host) memory
     host_vector<T> hA[batch_count];
-    host_vector<T> AAT[batch_count]; //(size_A);
-    host_vector<T> hB[batch_count]; //(size_B);
-    host_vector<T> hX[batch_count]; //(size_B);
-    host_vector<T> hXorB_1[batch_count]; //(size_B);
-    host_vector<T> hXorB_2[batch_count]; //(size_B);
-    host_vector<T> cpuXorB[batch_count]; //(size_B);
+    host_vector<T> AAT[batch_count];
+    host_vector<T> hB[batch_count];
+    host_vector<T> hX[batch_count];
+    host_vector<T> hXorB_1[batch_count];
+    host_vector<T> hXorB_2[batch_count];
+    host_vector<T> cpuXorB[batch_count];
 
     for(int b = 0; b < batch_count; b++)
     {
@@ -113,13 +110,15 @@ void testing_trsm_batched(const Arguments& arg)
         cpuXorB[b] = host_vector<T>(size_B);
     }
     // allocate memory on device
-    // device_vector<T*, 0, T> dA(size_A);
-    // device_vector<T*, 0, T> dXorB(size_B);
+    device_vector<T*, 0, T> dA(batch_count); //(size_A);
+    device_vector<T*, 0, T> dXorB(batch_count); //(size_B);
+    device_vector<T>        alpha_d(1);
+
     device_batch_vector<T> Av(batch_count, size_A);
     device_batch_vector<T> XorBv(batch_count, size_B);
+
     int                    last = batch_count - 1;
-    device_vector<T>       alpha_d(1);
-    if(!alpha_d || (!Av[last] && size_A) || (!XorBv[last] && size_B))
+    if(!dA || !dXorB || !alpha_d || (!Av[last] && size_A) || (!XorBv[last] && size_B))
     {
         CHECK_HIP_ERROR(hipErrorOutOfMemory);
         return;
@@ -245,8 +244,8 @@ void testing_trsm_batched(const Arguments& arg)
         CHECK_HIP_ERROR(hipMemcpy(XorBv[b], hXorB_1[b], sizeof(T) * size_B, hipMemcpyHostToDevice));
     }
     // 2. Copy intermediate arrays into device arrays
-    // CHECK_HIP_ERROR(hipMemcpy(dA, Av, sizeof(T*) * batch_count, hipMemcpyHostToDevice));
-    // CHECK_HIP_ERROR(hipMemcpy(dXorB, hXorB_1, sizeof(T*) * batch_count, hipMemcpyHostToDevice));
+    CHECK_HIP_ERROR(hipMemcpy(dA, Av, sizeof(T*) * batch_count, hipMemcpyHostToDevice));
+    CHECK_HIP_ERROR(hipMemcpy(dXorB, XorBv, sizeof(T*) * batch_count, hipMemcpyHostToDevice));
 
     T max_err_1 = 0.0;
     T max_err_2 = 0.0;
@@ -265,9 +264,10 @@ void testing_trsm_batched(const Arguments& arg)
             CHECK_HIP_ERROR(
                 hipMemcpy(XorBv[b], hXorB_1[b], sizeof(T) * size_B, hipMemcpyHostToDevice));
         }
+        CHECK_HIP_ERROR(hipMemcpy(dXorB, XorBv, sizeof(T*) * batch_count, hipMemcpyHostToDevice));
 
         CHECK_ROCBLAS_ERROR(rocblas_trsm_batched<T>(
-            handle, side, uplo, transA, diag, M, N, &alpha_h, Av, lda, XorBv, ldb, batch_count));
+            handle, side, uplo, transA, diag, M, N, &alpha_h, dA, lda, dXorB, ldb, batch_count));
 
         for(int b = 0; b < batch_count; b++)
         {
@@ -283,9 +283,10 @@ void testing_trsm_batched(const Arguments& arg)
             CHECK_HIP_ERROR(
                 hipMemcpy(XorBv[b], hXorB_2[b], sizeof(T) * size_B, hipMemcpyHostToDevice));
         }
+        CHECK_HIP_ERROR(hipMemcpy(dXorB, XorBv, sizeof(T*) * batch_count, hipMemcpyHostToDevice));
 
         CHECK_ROCBLAS_ERROR(rocblas_trsm_batched<T>(
-            handle, side, uplo, transA, diag, M, N, alpha_d, Av, lda, XorBv, ldb, batch_count));
+            handle, side, uplo, transA, diag, M, N, alpha_d, dA, lda, dXorB, ldb, batch_count));
 
         for(int b = 0; b < batch_count; b++)
         {
@@ -381,13 +382,14 @@ void testing_trsm_batched(const Arguments& arg)
             CHECK_HIP_ERROR(
                 hipMemcpy(XorBv[b], hXorB_1[b], sizeof(T) * size_B, hipMemcpyHostToDevice));
         }
+        CHECK_HIP_ERROR(hipMemcpy(dXorB, hXorB_1, sizeof(T*) * batch_count, hipMemcpyHostToDevice));
 
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
 
         gpu_time_used = get_time_us(); // in microseconds
 
         CHECK_ROCBLAS_ERROR(rocblas_trsm_batched<T>(
-            handle, side, uplo, transA, diag, M, N, &alpha_h, Av, lda, XorBv, ldb, batch_count));
+            handle, side, uplo, transA, diag, M, N, &alpha_h, dA, lda, dXorB, ldb, batch_count));
 
         gpu_time_used  = get_time_us() - gpu_time_used;
         rocblas_gflops = trsm_gflop_count<T>(M, N, K) / gpu_time_used * 1e6;

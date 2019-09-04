@@ -38,4 +38,20 @@ __global__ void copy_matrix_strided_batched_trsm(rocblas_int rows,
     copy_matrix_trsm(rows, cols, elem_size, xa, lda, xb, ldb);
 }
 
+template <typename T>
+__global__ void copy_matrix_batched_trsm(rocblas_int rows,
+                                         rocblas_int cols,
+                                         rocblas_int elem_size,
+                                         const T*    a[],
+                                         rocblas_int lda,
+                                         T*          b[],
+                                         rocblas_int ldb,
+                                         rocblas_int offset_a,
+                                         rocblas_int offset_b)
+{
+    const T* xa = a[hipBlockIdx_z] + offset_a;
+    T*       xb = b[hipBlockIdx_z] + offset_b;
+    copy_matrix_trsm(rows, cols, elem_size, xa, lda, xb, ldb);
+}
+
 #endif // \IncludeGuard

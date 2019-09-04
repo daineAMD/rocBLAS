@@ -7,6 +7,7 @@
 #include "rocblas_datatype2string.hpp"
 #include "rocblas_test.hpp"
 #include "testing_trtri.hpp"
+#include "testing_trtri_batched.hpp"
 #include "testing_trtri_strided_batched.hpp"
 #include "type_dispatch.hpp"
 #include <cctype>
@@ -37,6 +38,8 @@ namespace
         {
             if(!strcmp(arg.function, "trtri"))
                 testing_trtri<T>(arg);
+            else if(!strcmp(arg.function, "trtri_batched"))
+                testing_trtri_batched<T>(arg);
             else if(!strcmp(arg.function, "trtri_strided_batched"))
                 testing_trtri_strided_batched<T>(arg);
             else
@@ -47,6 +50,7 @@ namespace
     enum trtri_kind
     {
         trtri_k,
+        trtri_batched_k,
         trtri_strided_batched_k
     };
 
@@ -62,8 +66,12 @@ namespace
         // Filter for which functions apply to this suite
         static bool function_filter(const Arguments& arg)
         {
-            return K == trtri_k ? !strcmp(arg.function, "trtri")
-                                : !strcmp(arg.function, "trtri_strided_batched");
+            if(K == trtri_k)
+                return !strcmp(arg.function, "trtri");
+            else if(K == trtri_batched_k)
+                return !strcmp(arg.function, "trtri_batched");
+            else
+                return !strcmp(arg.function, "trtri_strided_batched");
         }
 
         // Google Test name suffix based on parameters
@@ -72,7 +80,7 @@ namespace
             RocBLAS_TestName<trtri_template> name;
             name << rocblas_datatype2string(arg.a_type) << '_' << (char)std::toupper(arg.uplo)
                  << (char)std::toupper(arg.diag) << '_' << arg.N << '_' << arg.lda;
-            if(K == trtri_strided_batched_k)
+            if(K != trtri_k)
                 name << '_' << arg.batch_count;
             return std::move(name);
         }
@@ -84,6 +92,13 @@ namespace
         rocblas_simple_dispatch<trtri_testing>(GetParam());
     }
     INSTANTIATE_TEST_CATEGORIES(trtri);
+
+    using trtri_batched = trtri_template<trtri_batched_k>;
+    TEST_P(trtri_batched, blas3)
+    {
+        rocblas_simple_dispatch<trtri_testing>(GetParam());
+    }
+    INSTANTIATE_TEST_CATEGORIES(trtri_batched);
 
     using trtri_strided_batched = trtri_template<trtri_strided_batched_k>;
     TEST_P(trtri_strided_batched, blas3)

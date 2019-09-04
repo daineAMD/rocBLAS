@@ -720,6 +720,23 @@ static constexpr auto rocblas_trtri<float> = rocblas_strtri;
 template <>
 static constexpr auto rocblas_trtri<double> = rocblas_dtrtri;
 
+// trtri_batched
+template <typename T>
+rocblas_status (*rocblas_trtri_batched)(rocblas_handle   handle,
+                                        rocblas_fill     uplo,
+                                        rocblas_diagonal diag,
+                                        rocblas_int      n,
+                                        const T* const   A[],
+                                        rocblas_int      lda,
+                                        T*               invA[],
+                                        rocblas_int      ldinvA);
+
+template <>
+static constexpr auto rocblas_trtri_batched<float> = rocblas_strtri_batched;
+
+template <>
+static constexpr auto rocblas_trtri_batched<double> = rocblas_dtrtri_batched;
+
 // trtri_strided_batched
 template <typename T>
 rocblas_status (*rocblas_trtri_strided_batched)(rocblas_handle   handle,

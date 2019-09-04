@@ -26,6 +26,7 @@
 #include "testing_swap.hpp"
 #include "testing_syr.hpp"
 #include "testing_trtri.hpp"
+#include "testing_trtri_batched.hpp"
 #include "testing_trtri_strided_batched.hpp"
 #include "type_dispatch.hpp"
 #include "utility.hpp"
@@ -168,6 +169,8 @@ struct perf_blas<
             testing_syr<T>(arg);
         else if(!strcmp(arg.function, "trtri"))
             testing_trtri<T>(arg);
+        else if(!strcmp(arg.function, "trtri_batched"))
+            testing_trtri_batched<T>(arg);
         else if(!strcmp(arg.function, "trtri_strided_batched"))
             testing_trtri_strided_batched<T>(arg);
         else if(!strcmp(arg.function, "geam"))

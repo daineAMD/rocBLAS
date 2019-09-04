@@ -58,7 +58,10 @@ rocblas_status rocblas_gemm_batched_template(rocblas_handle    handle,
                                              const T*          beta,
                                              T* const          C[],
                                              rocblas_int       ldc,
-                                             rocblas_int       batch_count);
+                                             rocblas_int       batch_count,
+                                             rocblas_int       offsetA = 0,
+                                             rocblas_int       offsetB = 0,
+                                             rocblas_int       offsetC = 0);
 
 #undef COMPLEX
 
@@ -371,7 +374,7 @@ inline rocblas_status rocblas_gemm_strided_batched_template(rocblas_handle      
                                                             rocblas_float_complex*       C,
                                                             rocblas_int                  ldc,
                                                             rocblas_int                  stride_c,
-                                                            rocblas_int batch_count)
+                                                            rocblas_int                  batch_count)
 {
     return rocblas_cgemm_strided_batched(handle,
                                          transA,
@@ -451,10 +454,13 @@ inline rocblas_status rocblas_gemm_batched_template(rocblas_handle            ha
                                                     const rocblas_half*       beta,
                                                     rocblas_half* const       C[],
                                                     rocblas_int               ldc,
-                                                    rocblas_int               batch_count)
+                                                    rocblas_int               batch_count,
+                                                    rocblas_int               offsetA,
+                                                    rocblas_int               offsetB,
+                                                    rocblas_int               offsetC)
 {
-    return rocblas_hgemm_batched(
-        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count);
+    return rocblas_hgemm_batched_offset(
+        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count, offsetA, offsetB, offsetC);
 }
 
 template <>
@@ -472,10 +478,13 @@ inline rocblas_status rocblas_gemm_batched_template(rocblas_handle     handle,
                                                     const float*       beta,
                                                     float* const       C[],
                                                     rocblas_int        ldc,
-                                                    rocblas_int        batch_count)
+                                                    rocblas_int        batch_count,
+                                                    rocblas_int        offsetA,
+                                                    rocblas_int        offsetB,
+                                                    rocblas_int        offsetC)
 {
-    return rocblas_sgemm_batched(
-        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count);
+    return rocblas_sgemm_batched_offset(
+        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count, offsetA, offsetB, offsetC);
 }
 
 template <>
@@ -493,10 +502,13 @@ inline rocblas_status rocblas_gemm_batched_template(rocblas_handle      handle,
                                                     const double*       beta,
                                                     double* const       C[],
                                                     rocblas_int         ldc,
-                                                    rocblas_int         batch_count)
+                                                    rocblas_int         batch_count,
+                                                    rocblas_int         offsetA,
+                                                    rocblas_int         offsetB,
+                                                    rocblas_int         offsetC)
 {
-    return rocblas_dgemm_batched(
-        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count);
+    return rocblas_dgemm_batched_offset(
+        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count, offsetA, offsetB, offsetC);
 }
 
 #if COMPLEX
@@ -516,10 +528,13 @@ inline rocblas_status rocblas_gemm_batched_template(rocblas_handle              
                                                     const rocblas_half_complex*       beta,
                                                     rocblas_half_complex* const       C[],
                                                     rocblas_int                       ldc,
-                                                    rocblas_int                       batch_count)
+                                                    rocblas_int                       batch_count,
+                                                    rocblas_int                       offsetA,
+                                                    rocblas_int                       offsetB,
+                                                    rocblas_int                       offsetC)
 {
-    return rocblas_qgemm_batched(
-        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count);
+    return rocblas_qgemm_batched_offset(
+        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count, offsetA, offsetB, offsetC);
 }
 
 template <>
@@ -537,10 +552,13 @@ inline rocblas_status rocblas_gemm_batched_template(rocblas_handle              
                                                     const rocblas_float_complex*       beta,
                                                     rocblas_float_complex* const       C[],
                                                     rocblas_int                        ldc,
-                                                    rocblas_int                        batch_count)
+                                                    rocblas_int                        batch_count,
+                                                    rocblas_int                        offsetA,
+                                                    rocblas_int                        offsetB,
+                                                    rocblas_int                        offsetC)
 {
-    return rocblas_cgemm_batched(
-        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count);
+    return rocblas_cgemm_batched_offset(
+        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count, offsetA, offsetB, offsetC);
 }
 
 template <>
@@ -558,10 +576,13 @@ inline rocblas_status rocblas_gemm_batched_template(rocblas_handle              
                                                     const rocblas_double_complex*       beta,
                                                     rocblas_double_complex* const       C[],
                                                     rocblas_int                         ldc,
-                                                    rocblas_int                         batch_count)
+                                                    rocblas_int                         batch_count,
+                                                    rocblas_int                         offsetA,
+                                                    rocblas_int                         offsetB,
+                                                    rocblas_int                         offsetC)
 {
-    return rocblas_zgemm_batched(
-        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count);
+    return rocblas_zgemm_batched_offset(
+        handle, transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count, offsetA, offsetB, offsetC);
 }
 
 #endif // complex

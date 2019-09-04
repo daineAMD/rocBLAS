@@ -1437,6 +1437,26 @@ ROCBLAS_EXPORT rocblas_status rocblas_dtrtri_strided_batched(rocblas_handle   ha
                                                              rocblas_int      stride_invA,
                                                              rocblas_int      batch_count);
 
+ROCBLAS_EXPORT rocblas_status rocblas_strtri_batched(rocblas_handle   handle,
+                                                     rocblas_fill     uplo,
+                                                     rocblas_diagonal diag,
+                                                     rocblas_int      n,
+                                                     const float* const    A[],
+                                                     rocblas_int      lda,
+                                                     float*           invA[],
+                                                     rocblas_int      ldinvA,
+                                                     rocblas_int      batch_count);
+
+ROCBLAS_EXPORT rocblas_status rocblas_dtrtri_batched(rocblas_handle   handle,
+                                                     rocblas_fill     uplo,
+                                                     rocblas_diagonal diag,
+                                                     rocblas_int      n,
+                                                     const double* const    A[],
+                                                     rocblas_int      lda,
+                                                     double*          invA[],
+                                                     rocblas_int      ldinvA,
+                                                     rocblas_int      batch_count);
+
 /*! \brief BLAS Level 3 API
 
     \details
@@ -2231,19 +2251,19 @@ ROCBLAS_EXPORT rocblas_status rocblas_zgemm_strided_batched(rocblas_handle      
     @param[in]
     alpha     specifies the scalar alpha.
     @param[in]
-    A         HOST array of DEVICE pointers storing A matricies on the GPU.
+    A         Device array of device pointers storing A matricies on the GPU.
     @param[in]
     lda       rocblas_int
               specifies the leading dimension of "A".
     @param[in]
-    B         HOST array of DEVICE pointers storing B matricies on the GPU.
+    B         Device array of device pointers storing B matricies on the GPU.
     @param[in]
     ldb       rocblas_int
               specifies the leading dimension of "B".
     @param[in]
     beta      specifies the scalar beta.
     @param[in, out]
-    C         HOST array of DEVICE pointers storing C matricies on the GPU.
+    C         Device array of device pointers storing C matricies on the GPU.
     @param[in]
     ldc       rocblas_int
               specifies the leading dimension of "C".
@@ -2300,6 +2320,63 @@ ROCBLAS_EXPORT rocblas_status rocblas_dgemm_batched(rocblas_handle      handle,
                                                     double* const       C[],
                                                     rocblas_int         ldc,
                                                     rocblas_int         batch_count);
+
+ROCBLAS_EXPORT rocblas_status rocblas_hgemm_batched_offset(rocblas_handle            handle,
+                                                           rocblas_operation         transa,
+                                                           rocblas_operation         transb,
+                                                           rocblas_int               m,
+                                                           rocblas_int               n,
+                                                           rocblas_int               k,
+                                                           const rocblas_half*       alpha,
+                                                           const rocblas_half* const A[],
+                                                           rocblas_int               lda,
+                                                           const rocblas_half* const B[],
+                                                           rocblas_int               ldb,
+                                                           const rocblas_half*       beta,
+                                                           rocblas_half* const       C[],
+                                                           rocblas_int               ldc,
+                                                           rocblas_int               batch_count,
+                                                           rocblas_int               offsetA,
+                                                           rocblas_int               offsetB,
+                                                           rocblas_int               offsetC);
+
+ROCBLAS_EXPORT rocblas_status rocblas_sgemm_batched_offset(rocblas_handle     handle,
+                                                           rocblas_operation  transa,
+                                                           rocblas_operation  transb,
+                                                           rocblas_int        m,
+                                                           rocblas_int        n,
+                                                           rocblas_int        k,
+                                                           const float*       alpha,
+                                                           const float* const A[],
+                                                           rocblas_int        lda,
+                                                           const float* const B[],
+                                                           rocblas_int        ldb,
+                                                           const float*       beta,
+                                                           float* const       C[],
+                                                           rocblas_int        ldc,
+                                                           rocblas_int        batch_count,
+                                                           rocblas_int        offsetA,
+                                                           rocblas_int        offsetB,
+                                                           rocblas_int        offsetC);
+
+ROCBLAS_EXPORT rocblas_status rocblas_dgemm_batched_offset(rocblas_handle      handle,
+                                                           rocblas_operation   transa,
+                                                           rocblas_operation   transb,
+                                                           rocblas_int         m,
+                                                           rocblas_int         n,
+                                                           rocblas_int         k,
+                                                           const double*       alpha,
+                                                           const double* const A[],
+                                                           rocblas_int         lda,
+                                                           const double* const B[],
+                                                           rocblas_int         ldb,
+                                                           const double*       beta,
+                                                           double* const       C[],
+                                                           rocblas_int         ldc,
+                                                           rocblas_int         batch_count,
+                                                           rocblas_int         offsetA,
+                                                           rocblas_int         offsetB,
+                                                           rocblas_int         offsetC);
 
 /*! \brief BLAS Level 3 API
 
