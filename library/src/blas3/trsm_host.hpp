@@ -4,7 +4,6 @@
 #include "handle.h"
 #include "rocblas.h"
 #include "trsm_device.hpp"
-// #include "trtri_trsm.hpp"
 #include "trtri_trsm.hpp"
 #include "utility.h"
 
@@ -1997,62 +1996,40 @@ namespace
                         }
                         else
                         {
-                            // TODO: Parrallelize this
-
-                            size_t sizecopy = batch_count * sizeof(T*);
-                            // Host arrays of device pointers.
-                            T* hostA[batch_count];
-                            T* hostB[batch_count];
-                            T* hostX[batch_count];
-
-                            hipError_t errA = hipMemcpy(hostA, A, sizecopy, hipMemcpyDeviceToHost);
-                            hipError_t errB = hipMemcpy(hostB, B, sizecopy, hipMemcpyDeviceToHost);
-                            hipError_t errC = hipMemcpy(hostX, x_temp, sizecopy, hipMemcpyDeviceToHost);
-
-                            if(get_rocblas_status_for_hip_status(errA) != rocblas_status_success)
-                                return get_rocblas_status_for_hip_status(errA);
-                            else if(get_rocblas_status_for_hip_status(errB) != rocblas_status_success)
-                                return get_rocblas_status_for_hip_status(errB);
-                            else if(get_rocblas_status_for_hip_status(errC) != rocblas_status_success)
-                                return get_rocblas_status_for_hip_status(errC);
-
                             rocblas_datatype  compute_type   = rocblas_datatype_from_type<T>;
                             rocblas_gemm_algo algo           = rocblas_gemm_algo_standard;
                             int32_t           solution_index = 0;
                             uint32_t          flags          = 0;
 
-                            for(int b = 0; b < batch_count; b++)
-                            {
-                                rocblas_gemm_strided_batched_ex(handle,
-                                                                transA,
-                                                                rocblas_operation_none,
-                                                                BLOCK,
-                                                                width,
-                                                                r * BLOCK,
-                                                                &negative_one<T>,
-                                                                hostA[b] + offsetA,
-                                                                compute_type,
-                                                                lda,
-                                                                0,
-                                                                hostB[b] + offsetB,
-                                                                compute_type,
-                                                                ldb,
-                                                                0,
-                                                                alpha,
-                                                                hostB[b] + j * BLOCK + w * B_chunk_size * ldb,
-                                                                compute_type,
-                                                                ldb,
-                                                                0,
-                                                                hostX[b],
-                                                                compute_type,
-                                                                BLOCK,
-                                                                0,
-                                                                1, //batch_count,
-                                                                compute_type,
-                                                                algo,
-                                                                solution_index,
-                                                                flags);
-                            }
+                            rocblas_gemm_batched_ex_offset(handle,
+                                                    transA,
+                                                    rocblas_operation_none,
+                                                    BLOCK,
+                                                    width,
+                                                    r * BLOCK,
+                                                    &negative_one<T>,
+                                                    A,
+                                                    compute_type,
+                                                    lda,
+                                                    B,
+                                                    compute_type,
+                                                    ldb,
+                                                    alpha,
+                                                    B,
+                                                    compute_type,
+                                                    ldb,
+                                                    x_temp,
+                                                    compute_type,
+                                                    BLOCK,
+                                                    batch_count,
+                                                    compute_type,
+                                                    algo,
+                                                    offsetA,
+                                                    offsetB,
+                                                    j * BLOCK + w * B_chunk_size * ldb,
+                                                    0,
+                                                    solution_index,
+                                                    flags);
                         }
                     }
 
@@ -2127,62 +2104,40 @@ namespace
                         }
                         else
                         {
-                            // TODO: Parrallelize this
-
-                            size_t sizecopy = batch_count * sizeof(T*);
-                            // Host arrays of device pointers.
-                            T* hostA[batch_count];
-                            T* hostB[batch_count];
-                            T* hostX[batch_count];
-
-                            hipError_t errA = hipMemcpy(hostA, A, sizecopy, hipMemcpyDeviceToHost);
-                            hipError_t errB = hipMemcpy(hostB, B, sizecopy, hipMemcpyDeviceToHost);
-                            hipError_t errC = hipMemcpy(hostX, x_temp, sizecopy, hipMemcpyDeviceToHost);
-
-                            if(get_rocblas_status_for_hip_status(errA) != rocblas_status_success)
-                                return get_rocblas_status_for_hip_status(errA);
-                            else if(get_rocblas_status_for_hip_status(errB) != rocblas_status_success)
-                                return get_rocblas_status_for_hip_status(errB);
-                            else if(get_rocblas_status_for_hip_status(errC) != rocblas_status_success)
-                                return get_rocblas_status_for_hip_status(errC);
-
                             rocblas_datatype  compute_type   = rocblas_datatype_from_type<T>;
                             rocblas_gemm_algo algo           = rocblas_gemm_algo_standard;
                             int32_t           solution_index = 0;
                             uint32_t          flags          = 0;
 
-                            for(int b = 0; b < batch_count; b++)
-                            {
-                                rocblas_gemm_strided_batched_ex(handle, // TODO:
-                                                                rocblas_operation_none,
-                                                                transA,
-                                                                width,
-                                                                BLOCK,
-                                                                r * BLOCK,
-                                                                &negative_one<T>,
-                                                                hostB[b] + offsetB,
-                                                                compute_type,
-                                                                ldb,
-                                                                0,
-                                                                hostA[b] + offsetA,
-                                                                compute_type,
-                                                                lda,
-                                                                0,
-                                                                alpha,
-                                                                hostB[b] + j * BLOCK * ldb + w * B_chunk_size,
-                                                                compute_type,
-                                                                ldb,
-                                                                0,
-                                                                hostX[b],
-                                                                compute_type,
-                                                                width,
-                                                                0,
-                                                                1, //batch_count,
-                                                                compute_type,
-                                                                algo,
-                                                                solution_index,
-                                                                flags);
-                            }
+                            rocblas_gemm_batched_ex_offset(handle,
+                                                    rocblas_operation_none,
+                                                    transA,
+                                                    width,
+                                                    BLOCK,
+                                                    r * BLOCK,
+                                                    &negative_one<T>,
+                                                    B,
+                                                    compute_type,
+                                                    ldb,
+                                                    A,
+                                                    compute_type,
+                                                    lda,
+                                                    alpha,
+                                                    B,
+                                                    compute_type,
+                                                    ldb,
+                                                    x_temp,
+                                                    compute_type,
+                                                    width,
+                                                    batch_count,
+                                                    compute_type,
+                                                    algo,
+                                                    offsetB,
+                                                    offsetA,
+                                                    j * BLOCK * ldb + w * B_chunk_size,
+                                                    0,
+                                                    solution_index,
+                                                    flags);
                         }
                     }
 

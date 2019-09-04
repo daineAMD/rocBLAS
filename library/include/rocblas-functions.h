@@ -3179,6 +3179,226 @@ ROCBLAS_EXPORT rocblas_status rocblas_gemm_strided_batched_ex(rocblas_handle    
                                         algo,           \
                                         solution_index, \
                                         flags)
+
+/*! \brief BLAS EX API
+
+    \details
+    GEMM_BATCHED_EX performs one of the batched matrix-matrix operations
+
+        D[i] = alpha*op(A[i])*op(B[i]) + beta*C[i], for i in
+   [0,batch_count-1]
+
+    where op( X ) is one of
+
+        op( X ) = X      or
+        op( X ) = X**T   or
+        op( X ) = X**H,
+
+    alpha and beta are scalars, and A, B, C, and D are batched pointers to matrices, with
+    op( A ) an m by k by batch_count batched matrix,
+    op( B ) a k by n by batch_count batched matrix and
+    C and D are m by n by batch_count batched matrices.
+
+    The batched matrices are an array of pointers to matrices.
+    The number of pointers to matrices is batch_count.
+
+    Supported types are as follows:
+        - rocblas_datatype_f64_r = a_type = b_type = c_type = d_type = compute_type
+        - rocblas_datatype_f32_r = a_type = b_type = c_type = d_type = compute_type
+        - rocblas_datatype_f16_r = a_type = b_type = c_type = d_type = compute_type
+        - rocblas_datatype_f16_r = a_type = b_type = c_type = d_type; rocblas_datatype_f32_r =
+   compute_type
+        - rocblas_datatype_bf16_r = a_type = b_type = c_type = d_type; rocblas_datatype_f32_r =
+   compute_type
+        - rocblas_datatype_i8_r = a_type = b_type; rocblas_datatype_i32_r = c_type = d_type =
+   compute_type
+        - rocblas_datatype_f32_c  = a_type = b_type = c_type = d_type = compute_type
+        - rocblas_datatype_f64_c  = a_type = b_type = c_type = d_type = compute_type
+
+    Below are restrictions for rocblas_datatype_i8_r = a_type = b_type; rocblas_datatype_i32_r =
+   c_type = d_type = compute_type:
+        - k must be a multiple of 4
+        - lda must be a multiple of 4 if transA == rocblas_operation_transpose
+        - ldb must be a multiple of 4 if transB == rocblas_operation_none
+        - for transA == rocblas_operation_transpose or transB == rocblas_operation_none the matrices
+   A and B must
+          have each 4 consecutive values in the k dimension packed. This packing can be achieved
+   with the following
+          pseudo-code. The code assumes the original matrices are in A and B, and the packed
+   matrices are A_packed
+          and B_packed. The size of the A_packed matrix is the same as the size of the A matrix, and
+   the size of
+          the B_packed matrix is the same as the size of the B matrix.
+
+    @code
+    if(transA == rocblas_operation_none)
+    {
+        int nb = 4;
+        for(int i_m = 0; i_m < m; i_m++)
+        {
+            for(int i_k = 0; i_k < k; i_k++)
+            {
+                A_packed[i_k % nb + (i_m + (i_k / nb) * lda) * nb] = A[i_m + i_k * lda];
+            }
+        }
+    }
+    else
+    {
+        A_packed = A;
+    }
+    if(trans_b == rocblas_operation_transpose)
+    {
+        int nb = 4;
+        for(int i_n = 0; i_n < m; i_n++)
+        {
+            for(int i_k = 0; i_k < k; i_k++)
+            {
+                B_packed[i_k % nb + (i_n + (i_k / nb) * lda) * nb] = B[i_n + i_k * lda];
+            }
+        }
+    }
+    else
+    {
+        B_packed = B;
+    }
+    @endcode
+
+    @param[in]
+    handle    rocblas_handle.
+              handle to the rocblas library context queue.
+    @param[in]
+    transA    rocblas_operation.
+              specifies the form of op( A ).
+    @param[in]
+    transB    rocblas_operation.
+              specifies the form of op( B ).
+    @param[in]
+    m         rocblas_int.
+              matrix dimension m.
+    @param[in]
+    n         rocblas_int.
+              matrix dimension n.
+    @param[in]
+    k         rocblas_int.
+              matrix dimension k.
+    @param[in]
+    alpha     const void *.
+              specifies the scalar alpha. Same datatype as compute_type.
+    @param[in]
+    a         void *.
+              pointer storing array of pointers to matrices A on the GPU.
+    @param[in]
+    a_type    rocblas_datatype.
+              specifies the datatype of matrix A.
+    @param[in]
+    lda       rocblas_int.
+              specifies the leading dimension of A.
+    @param[in]
+    b         void *.
+              pointer storing array of pointers to matrices B on the GPU.
+    @param[in]
+    b_type    rocblas_datatype.
+              specifies the datatype of matrix B.
+    @param[in]
+    ldb       rocblas_int.
+              specifies the leading dimension of B.
+    @param[in]
+    beta      const void *.
+              specifies the scalar beta. Same datatype as compute_type.
+    @param[in]
+    c         void *.
+              pointer storing array of pointers to matrices C on the GPU.
+    @param[in]
+    c_type    rocblas_datatype.
+              specifies the datatype of matrix C.
+    @param[in]
+    ldc       rocblas_int.
+              specifies the leading dimension of C.
+    @param[out]
+    d         void *.
+              pointer storing array of pointers to matrices D on the GPU.
+    @param[in]
+    d_type    rocblas_datatype.
+              specifies the datatype of matrix D.
+    @param[in]
+    ldd       rocblas_int.
+              specifies the leading dimension of D.
+    @param[in]
+    batch_count
+              rocblas_int.
+              number of gemm operations in the batch.
+    @param[in]
+    compute_type
+              rocblas_datatype.
+              specifies the datatype of computation.
+    @param[in]
+    algo      rocblas_gemm_algo.
+              enumerant specifying the algorithm type.
+    @param[in]
+    solution_index
+              int32_t.
+              reserved for future use.
+    @param[in]
+    flags     uint32_t.
+              reserved for future use.
+
+    ********************************************************************/
+ROCBLAS_EXPORT rocblas_status rocblas_gemm_batched_ex(rocblas_handle    handle,
+                                                      rocblas_operation transA,
+                                                      rocblas_operation trans_b,
+                                                      rocblas_int       m,
+                                                      rocblas_int       n,
+                                                      rocblas_int       k,
+                                                      const void*       alpha,
+                                                      const void*       a,
+                                                      rocblas_datatype  a_type,
+                                                      rocblas_int       lda,
+                                                      const void*       b,
+                                                      rocblas_datatype  b_type,
+                                                      rocblas_int       ldb,
+                                                      const void*       beta,
+                                                      const void*       c,
+                                                      rocblas_datatype  c_type,
+                                                      rocblas_int       ldc,
+                                                      void*             d,
+                                                      rocblas_datatype  d_type,
+                                                      rocblas_int       ldd,
+                                                      rocblas_int       batch_count,
+                                                      rocblas_datatype  compute_type,
+                                                      rocblas_gemm_algo algo,
+                                                      int32_t           solution_index,
+                                                      uint32_t          flags);
+
+ROCBLAS_EXPORT rocblas_status rocblas_gemm_batched_ex_offset(rocblas_handle    handle,
+                                                      rocblas_operation transA,
+                                                      rocblas_operation trans_b,
+                                                      rocblas_int       m,
+                                                      rocblas_int       n,
+                                                      rocblas_int       k,
+                                                      const void*       alpha,
+                                                      const void*       a,
+                                                      rocblas_datatype  a_type,
+                                                      rocblas_int       lda,
+                                                      const void*       b,
+                                                      rocblas_datatype  b_type,
+                                                      rocblas_int       ldb,
+                                                      const void*       beta,
+                                                      const void*       c,
+                                                      rocblas_datatype  c_type,
+                                                      rocblas_int       ldc,
+                                                      void*             d,
+                                                      rocblas_datatype  d_type,
+                                                      rocblas_int       ldd,
+                                                      rocblas_int       batch_count,
+                                                      rocblas_datatype  compute_type,
+                                                      rocblas_gemm_algo algo,
+                                                      rocblas_int       offset_a,
+                                                      rocblas_int       offset_b,
+                                                      rocblas_int       offset_c,
+                                                      rocblas_int       offset_d,
+                                                      int32_t           solution_index,
+                                                      uint32_t          flags);
+
 // clang-format on
 
 /*! BLAS EX API

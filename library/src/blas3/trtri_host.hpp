@@ -322,28 +322,6 @@ rocblas_status trtri_batched_gemm_block(rocblas_handle handle,
                                                        sub_blocks);
     }
 
-    //     // // second batched gemm compute  invA21 = -invA22 * C (lower) or invA12 = -invA11*C (upper)
-    //     // // distance between each invA21 or invA12 is stride_invA,
-    //     status = rocblas_gemm_batched_template(handle,
-    //                                            rocblas_operation_none,
-    //                                            rocblas_operation_none,
-    //                                            M,
-    //                                            N,
-    //                                            M,
-    //                                            &negative_one,
-    //                                            invAg2a,
-    //                                            ld_invA,
-    //                                            C,
-    //                                            ld_C,
-    //                                            &zero,
-    //                                            invAg2c,
-    //                                            ld_invA,
-    //                                            batch_count,
-    //                                            offset_invAg2a + b * sub_stride_invA,
-    //                                            offset_C + b * sub_stride_C,
-    //                                            offset_invAg2c + b * sub_stride_invA);
-    // }
-
     return status;
 }
 
