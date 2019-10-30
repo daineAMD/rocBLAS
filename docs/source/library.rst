@@ -52,8 +52,7 @@ Download the master branch of rocBLAS from github using:
    cd rocBLAS
 
 Note if you want to contribute to rocBLAS, you will need the develop
-branch, not the master branch, and you will need to read
-.github/CONTRIBUTING.md.
+branch, not the master branch, and you will need to read Contributing_.
 
 Below are steps to build either (dependencies + library) or
 (dependencies + library + client). You only need (dependencies +
@@ -226,11 +225,11 @@ Build (library dependencies + client dependencies + library + client) using Indi
 **Additional dependencies for the rocBLAS clients**
 
 The unit tests and benchmarking applications in the client introduce the
-following dependencies: 1. `boost <http://www.boost.org/>`__ 2.
-`fortran <http://gcc.gnu.org/wiki/GFortran>`__ 2.
-`lapack <https://github.com/Reference-LAPACK/lapack-release>`__ \*
-lapack itself brings a dependency on a fortran compiler 3.
-`googletest <https://github.com/google/googletest>`__
+following dependencies:
+   1. `boost <http://www.boost.org/>`__
+   2. `fortran <http://gcc.gnu.org/wiki/GFortran>`__
+   3. `lapack <https://github.com/Reference-LAPACK/lapack-release>`__ - lapack itself brings a dependency on a fortran compiler
+   4. `googletest <https://github.com/google/googletest>`__
 
 **boost**
 
