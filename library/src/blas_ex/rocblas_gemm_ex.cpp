@@ -213,11 +213,6 @@ rocblas_status rocblas_gemm_ex_impl(rocblas_handle    handle,
         }
     }
 
-    // quick return m,n,k equal to 0 is valid in BLAS
-    // Note: k==0 is not a quick return, because C still has to be multiplied by beta
-    if(!m || !n)
-        return rocblas_status_success;
-
     // sizes must not be negative
     if(m < 0 || n < 0 || k < 0)
         return rocblas_status_invalid_size;
@@ -226,6 +221,11 @@ rocblas_status rocblas_gemm_ex_impl(rocblas_handle    handle,
     if(ldc < m || ldd < m || lda < (trans_a == rocblas_operation_none ? m : k)
        || ldb < (trans_b == rocblas_operation_none ? k : n))
         return rocblas_status_invalid_size;
+
+    // quick return m,n,k equal to 0 is valid in BLAS
+    // Note: k==0 is not a quick return, because C still has to be multiplied by beta
+    if(!m || !n)
+        return rocblas_status_success;
 
     // pointers must be valid
     if(!a || !b || !c || !d || !alpha || !beta)

@@ -223,11 +223,6 @@ try
         }
     }
 
-    // Early exit
-    // Note: k==0 is not an early exit, since C still needs to be multiplied by beta
-    if(!m || !n || !batch_count)
-        return rocblas_status_success;
-
     // sizes must not be negative
     if(m < 0 || n < 0 || k < 0 || batch_count < 0)
         return rocblas_status_invalid_size;
@@ -236,6 +231,11 @@ try
     if(ldc < m || ldd < m || lda < (trans_a == rocblas_operation_none ? m : k)
        || ldb < (trans_b == rocblas_operation_none ? k : n))
         return rocblas_status_invalid_size;
+
+    // Early exit
+    // Note: k==0 is not an early exit, since C still needs to be multiplied by beta
+    if(!m || !n || !batch_count)
+        return rocblas_status_success;
 
     // pointers must be valid
     if(!a || !b || !c || !d || !alpha || !beta)
