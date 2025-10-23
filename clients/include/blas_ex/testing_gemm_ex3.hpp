@@ -1,5 +1,5 @@
 /* ************************************************************************
- * Copyright (C) 2018-2024 Advanced Micro Devices, Inc.
+ * Copyright (C) 2018-2025 Advanced Micro Devices, Inc.
  * ************************************************************************ */
 
 #pragma once
@@ -1919,6 +1919,97 @@ void testing_gemm_ex3(const Arguments& arg)
 
     if(arg.timing)
     {
+        static std::unique_ptr<device_strided_batch_matrix<Ti>> dA_alloc;
+        static std::unique_ptr<device_strided_batch_matrix<Ti>> dB_alloc;
+        static std::unique_ptr<device_strided_batch_matrix<To>> dC_alloc;
+        static std::unique_ptr<device_strided_batch_matrix<To>> dD_alloc;
+
+        rocblas_stride stride_a = lda * A_col;
+        rocblas_stride stride_b = ldb * B_col;
+        rocblas_stride stride_c = ldc * N;
+        rocblas_stride stride_d = ldd * N;
+
+        rocblas_stride aligned_stride_a = align_stride<Ti>(stride_a);
+        rocblas_stride aligned_stride_b = align_stride<Ti>(stride_b);
+        rocblas_stride aligned_stride_c = align_stride<To>(stride_c);
+        rocblas_stride aligned_stride_d = align_stride<To>(stride_d);
+
+        size_t a_size            = M * K * sizeof(Ti);
+        size_t b_size            = K * N * sizeof(Ti);
+        size_t c_size            = M * N * sizeof(To);
+        size_t a_b_c_cached_size = a_size + b_size + c_size;
+
+        size_t flush_batch_count = calculate_flush_batch_count(
+            arg.flush_batch_count, arg.flush_memory_size, a_b_c_cached_size);
+
+        // Allocate extra memory (then resize), so later runs are more likely to be able to reuse the memory.
+        float   extra_memory = 1.2;
+        int64_t A_row        = transA == rocblas_operation_none ? M : Kmax;
+        int64_t A_col        = transA == rocblas_operation_none ? Kmax : M;
+        int64_t B_row        = transB == rocblas_operation_none ? Kmax : N;
+        int64_t B_col        = transB == rocblas_operation_none ? N : Kmax;
+
+        if(!dA_alloc || !dA_alloc->resize(A_row, A_col, lda, aligned_stride_a, flush_batch_count))
+        {
+            dA_alloc = std::make_unique<device_strided_batch_matrix<Ti>>(aligned_stride_a,
+                                                                         1,
+                                                                         aligned_stride_a,
+                                                                         aligned_stride_a,
+                                                                         flush_batch_count
+                                                                             * extra_memory);
+            rocblas_init_matrix<Ti>(handle,
+                                    *dA_alloc,
+                                    arg,
+                                    rocblas_client_alpha_sets_nan,
+                                    rocblas_client_general_matrix,
+                                    true);
+            dA_alloc->resize(A_row, A_col, lda, aligned_stride_a, flush_batch_count);
+        }
+        if(!dB_alloc || !dB_alloc->resize(B_row, B_col, ldb, aligned_stride_b, flush_batch_count))
+        {
+            dB_alloc = std::make_unique<device_strided_batch_matrix<Ti>>(aligned_stride_b,
+                                                                         1,
+                                                                         aligned_stride_b,
+                                                                         aligned_stride_b,
+                                                                         flush_batch_count
+                                                                             * extra_memory);
+            rocblas_init_matrix<Ti>(handle,
+                                    *dB_alloc,
+                                    arg,
+                                    rocblas_client_alpha_sets_nan,
+                                    rocblas_client_general_matrix,
+                                    false,
+                                    true);
+            dB_alloc->resize(B_row, B_col, ldb, aligned_stride_b, flush_batch_count);
+        }
+        if(!dC_alloc || !dC_alloc->resize(M, N, ldc, aligned_stride_c, flush_batch_count))
+        {
+            dC_alloc = std::make_unique<device_strided_batch_matrix<To>>(aligned_stride_c,
+                                                                         1,
+                                                                         aligned_stride_c,
+                                                                         aligned_stride_c,
+                                                                         flush_batch_count
+                                                                             * extra_memory);
+            rocblas_init_matrix<To>(handle,
+                                    *dC_alloc,
+                                    arg,
+                                    rocblas_client_beta_sets_nan,
+                                    rocblas_client_general_matrix);
+            dC_alloc->resize(M, N, ldc, aligned_stride_c, flush_batch_count);
+        }
+
+        if(!dD_alloc || !dD_alloc->resize(M, N, ldd, aligned_stride_d, flush_batch_count))
+        {
+            dD_alloc = std::make_unique<device_strided_batch_matrix<To>>(
+                M, N, ldd, aligned_stride_d, flush_batch_count * extra_memory);
+            dD_alloc->resize(M, N, ldd, aligned_stride_d, flush_batch_count);
+        }
+
+        auto& dA2 = *dA_alloc;
+        auto& dB2 = *dB_alloc;
+        auto& dC2 = *dC_alloc;
+        auto& dD2 = (arg.outofplace) ? *dD_alloc : dC;
+
         int number_cold_calls = arg.cold_iters;
         int number_hot_calls  = arg.iters;
 
@@ -1933,17 +2024,17 @@ void testing_gemm_ex3(const Arguments& arg)
                                                     N,
                                                     K,
                                                     &h_alpha_Tc,
-                                                    dA,
+                                                    dA2,
                                                     arg.a_type,
                                                     lda,
-                                                    dB,
+                                                    dB2,
                                                     arg.b_type,
                                                     ldb,
                                                     &h_beta_Tc,
-                                                    dC,
+                                                    dC2,
                                                     arg.c_type,
                                                     ldc,
-                                                    dDref,
+                                                    dD2,
                                                     d_type,
                                                     ldd,
                                                     arg.composite_compute_type,
@@ -1964,17 +2055,17 @@ void testing_gemm_ex3(const Arguments& arg)
                                 N,
                                 K,
                                 &h_alpha_Tc,
-                                dA,
+                                dA2,
                                 arg.a_type,
                                 lda,
-                                dB,
+                                dB2,
                                 arg.b_type,
                                 ldb,
                                 &h_beta_Tc,
-                                dC,
+                                dC2,
                                 arg.c_type,
                                 ldc,
-                                dDref,
+                                dD2,
                                 d_type,
                                 ldd,
                                 arg.composite_compute_type,
